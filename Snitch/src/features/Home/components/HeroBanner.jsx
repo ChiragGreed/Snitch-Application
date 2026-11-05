@@ -10,7 +10,7 @@ export default function HeroBanner({ onToast }) {
   
   return (
     <View style={styles.heroCard}>
-      <ImageBackground source={{ uri: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&q=80' }} style={{ flex: 1, justifyContent: 'space-between' }} imageStyle={{ borderRadius: 0 }}>
+      <ImageBackground source={{ uri: 'https://ik.imagekit.io/lfqmv9rcq/Snitch/Products/screen.png?updatedAt=1793873271590' }} style={{ flex: 1, justifyContent: 'space-between' }} imageStyle={{ borderRadius: 0 }}>
         <View style={styles.heroOverlay} />
         <View style={styles.heroTopRow}>
           <View style={styles.limitedEditionBadge}><Text style={styles.limitedEditionText}>LIMITED EDITION</Text></View>
