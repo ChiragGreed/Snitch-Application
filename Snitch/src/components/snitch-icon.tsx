@@ -22,6 +22,8 @@ const SF_MAPPING: Record<string, string> = {
   favorite: 'heart.fill',
   favorite_border: 'heart',
   close: 'xmark',
+  home: 'house',
+  person: 'person',
 };
 
 const UNICODE_FALLBACK: Record<string, string> = {
@@ -44,6 +46,8 @@ const UNICODE_FALLBACK: Record<string, string> = {
   favorite: '♥',
   favorite_border: '♡',
   close: '✕',
+  home: '⌂',
+  person: '👤',
 };
 
 interface SnitchIconProps {
