@@ -16,5 +16,5 @@
     "**/*.tsx",
     ".expo/types/**/*.ts",
     "expo-env.d.ts"
-, "src/features/Home/pages/index.jsx"  ]
+, "src/features/Home/pages/index.jsx", "src/hooks/use-color-scheme.js", "src/hooks/use-color-scheme.web.js", "src/hooks/use-theme.js", "src/constants/snitch-theme.js", "src/constants/theme.js"  ]
 }
