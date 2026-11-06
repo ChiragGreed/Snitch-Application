@@ -45,8 +45,6 @@ export default function HomeScreen() {
 
         const adaptedProducts = products.map(adaptProduct);
 
-        console.log('ADAPTED PRODUCT:', adaptedProducts[0]);
-
         setProductsData(adaptedProducts);
 
       } catch (err) {

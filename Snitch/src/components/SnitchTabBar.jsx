@@ -1,12 +1,6 @@
 
 import React from 'react';
-import {
-  View,
-  Text,
-  Pressable,
-  StyleSheet,
-  Platform,
-} from 'react-native';
+import { View, Text, Pressable, StyleSheet, Platform, } from 'react-native';
 
 import { useRouter, usePathname } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -40,7 +34,7 @@ export default function SnitchTabBar() {
             tab.href === '/'
               ? pathname === '/'
               : pathname === tab.href ||
-                pathname.startsWith(`${tab.href}/`);
+              pathname.startsWith(`${tab.href}/`);
 
           return (
             <Pressable
