@@ -1,17 +1,16 @@
-const API_BASE_URL = 'https://snitch-ecommerce.onrender.com';
+import axios from 'axios';
 
-export const fetchProducts = async () => {
-  const response = await fetch(`${API_BASE_URL}/api/products`);
+const api = axios.create({
+  baseURL: 'https://snitch-ecommerce.onrender.com',
+  withCredentials: true,
+});
 
-  if (!response.ok) {
-    throw new Error(`Failed to fetch products: ${response.status}`);
-  }
-
-  const data = await response.json();
-
-  if (!data.success) {
-    throw new Error(data.message || 'Unable to fetch products');
-  }
-  
-  return data.products;
+export const getProductsApi = async () => {
+  const response = await api.get(`/api/products`);
+  return response.data.products;
 };
+
+export const getProductApi = async ({ productId }) => {
+  const response = await api.get(`/${productId}`);
+  return response.data;
+}

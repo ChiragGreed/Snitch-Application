@@ -1,6 +1,7 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { View, ScrollView, ActivityIndicator, Text } from 'react-native';
+import { useSelector } from 'react-redux';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CATEGORIES, SORT_OPTIONS } from '@/features/Home/data/homeData';
@@ -11,8 +12,7 @@ import CategoryChips from '@/features/Home/components/CategoryChips';
 import EditorialSections from '@/features/Home/components/EditorialSections';
 
 import ProductGrid from '@/features/Products/components/ProductGrid';
-import { fetchProducts } from '@/features/Products/services/productApi';
-import { adaptProduct } from '@/features/Products/utils/productAdapter';
+import useProducts from '@/features/Products/hooks/useProducts';
 
 import SearchBar from '@/shared/components/SearchBar';
 import Toast from '@/shared/components/Toast';
@@ -22,10 +22,15 @@ import { styles } from '@/shared/styles/homeStyles';
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
 
-  // Products from backend
-  const [productsData, setProductsData] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const { getProductsHandler } = useProducts();
+
+  useEffect(() => {
+    getProductsHandler();
+  }, [getProductsHandler]);
+  const productsData = useSelector((state) => state.products.AllProducts);
+  const status = useSelector((state) => state.products.status);
+  const error = useSelector((state) => state.products.error);
+  const loading = status === 'idle' || status === 'loading';
 
   // Home screen state
   const [selectedCategory, setSelectedCategory] = useState('ALL PIECES');
@@ -33,30 +38,6 @@ export default function HomeScreen() {
   const [sortIndex, setSortIndex] = useState(0);
   const [wishlist, setWishlist] = useState([]);
   const [toastMessage, setToastMessage] = useState(null);
-
-  // Fetch products
-  useEffect(() => {
-    const loadProducts = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-
-        const products = await fetchProducts();
-
-        const adaptedProducts = products.map(adaptProduct);
-
-        setProductsData(adaptedProducts);
-
-      } catch (err) {
-        console.error('Products fetch error:', err);
-        setError(err.message || 'Something went wrong');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadProducts();
-  }, []);
 
   // Toast notification
   const triggerToast = (message) => {
