@@ -24,6 +24,11 @@ const SF_MAPPING: Record<string, string> = {
   close: 'xmark',
   home: 'house',
   person: 'person',
+  expand_less: 'chevron.up',
+  arrow_back: 'arrow.left',
+  straighten: 'ruler',
+  grid_view: 'square.grid.2x2',
+  filter_list: 'line.3.horizontal.decrease',
 };
 
 const UNICODE_FALLBACK: Record<string, string> = {
@@ -48,6 +53,11 @@ const UNICODE_FALLBACK: Record<string, string> = {
   close: '✕',
   home: '⌂',
   person: '👤',
+  expand_less: '▴',
+  arrow_back: '←',
+  straighten: '↔',
+  grid_view: '⊞',
+  filter_list: '≡',
 };
 
 interface SnitchIconProps {
