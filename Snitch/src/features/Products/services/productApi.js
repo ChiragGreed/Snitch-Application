@@ -15,3 +15,8 @@ export const getProductApi = async ({ productId }) => {
   // console.log('response.data', response.data.product);
   return response.data;
 };
+
+export const getCategoriesApi = async () => {
+  const response = await api.get('/api/products/categories');
+  return response.data.categories;
+};
