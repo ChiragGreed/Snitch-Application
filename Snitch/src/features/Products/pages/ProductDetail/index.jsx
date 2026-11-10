@@ -7,10 +7,12 @@ import ProductDetailScreen from '@/features/Products/components/ProductDetail';
 import useProducts from '@/features/Products/hooks/useProducts';
 import { SnitchColors } from '@/constants/snitch-theme';
 import { useSelector } from 'react-redux';
+import useCart from '@/features/Cart/hooks/useCart';
 
 export default function ProductDetailPage() {
   const { id } = useLocalSearchParams();
   const { getProductHandler } = useProducts();
+  const { addToCartHandler } = useCart();
 
   const product = useSelector((state) => state.products.Product);
   const [loading, setLoading] = useState(true);
@@ -38,12 +40,11 @@ export default function ProductDetailPage() {
 
   const handleToggleWishlist = useCallback(() => {
     setIsWishlisted((prev) => !prev);
-  }, []);``
-
-  const handleAddToCart = useCallback((p) => {
-    // Placeholder — integrate with global cart state later
-    console.log('Add to cart:', p?.id);
   }, []);
+
+  const handleAddToCart = useCallback((p, variant) => {
+    addToCartHandler(p, variant);
+  }, [addToCartHandler]);
 
   if (loading) {
     return (

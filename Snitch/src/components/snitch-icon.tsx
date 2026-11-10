@@ -29,6 +29,15 @@ const SF_MAPPING: Record<string, string> = {
   straighten: 'ruler',
   grid_view: 'square.grid.2x2',
   filter_list: 'line.3.horizontal.decrease',
+  delete_outline: 'trash',
+  delete: 'trash',
+  remove: 'minus',
+  add: 'plus',
+  local_activity: 'ticket',
+  chevron_right: 'chevron.right',
+  info: 'info.circle',
+  verified_user: 'checkmark.shield',
+  published_with_changes: 'arrow.triangle.2.circlepath',
 };
 
 const UNICODE_FALLBACK: Record<string, string> = {
@@ -58,6 +67,15 @@ const UNICODE_FALLBACK: Record<string, string> = {
   straighten: '↔',
   grid_view: '⊞',
   filter_list: '≡',
+  delete_outline: '🗑',
+  delete: '🗑',
+  remove: '−',
+  add: '+',
+  local_activity: '🎟',
+  chevron_right: '›',
+  info: 'ⓘ',
+  verified_user: '🛡',
+  published_with_changes: '↺',
 };
 
 interface SnitchIconProps {

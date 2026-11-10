@@ -128,9 +128,12 @@ export const styles = StyleSheet.create({
     borderRadius: SnitchRadius.md,
     overflow: 'hidden',
   },
+  heroSlider: {
+    flex: 1,
+  },
   heroOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.25)',
+    backgroundColor: 'rgba(0,0,0,0.32)',
   },
   heroTopRow: {
     flexDirection: 'row',
@@ -173,17 +176,26 @@ export const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '600',
     letterSpacing: 2,
+    textShadowColor: 'rgba(0,0,0,0.9)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 4,
   },
   heroTitle: {
     color: '#FFFFFF',
     fontSize: 22,
     fontWeight: '700',
     lineHeight: 28,
+    textShadowColor: 'rgba(0,0,0,0.9)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 5,
   },
   heroDescription: {
     color: 'rgba(255,255,255,0.85)',
     fontSize: 13,
     lineHeight: 18,
+    textShadowColor: 'rgba(0,0,0,0.9)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 4,
   },
   heroActionsRow: {
     flexDirection: 'row',
@@ -546,4 +558,3 @@ export const styles = StyleSheet.create({
     textAlign: 'center',
   },
 });
-

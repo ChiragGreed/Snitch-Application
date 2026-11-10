@@ -5,6 +5,7 @@ import { useSelector } from 'react-redux';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CATEGORIES, SORT_OPTIONS } from '@/features/Home/data/homeData';
+import useCart from '@/features/Cart/hooks/useCart';
 
 import HomeHeader from '@/features/Home/components/HomeHeader';
 import HeroBanner from '@/features/Home/components/HeroBanner';
@@ -23,6 +24,7 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
 
   const { getProductsHandler } = useProducts();
+  const { addToCartHandler } = useCart();
 
   useEffect(() => {
     getProductsHandler();
@@ -60,8 +62,10 @@ export default function HomeScreen() {
     });
   };
 
-  // Add to cart (UI feedback for now)
+  // Add to cart
   const handleAddToCart = (product) => {
+    if (!product) return;
+    addToCartHandler(product);
     triggerToast(`Added ${product.title} to bag`);
   };
 

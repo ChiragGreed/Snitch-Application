@@ -245,7 +245,7 @@ export default function ProductDetailScreen({ product, onAddToCart, onToggleWish
   const handleAddToCart = () => {
     if (!canPurchase) return;
 
-    onAddToCart?.(product, variantId);
+    onAddToCart?.(product, selectedVariant);
   };
 
   // --------------------------------

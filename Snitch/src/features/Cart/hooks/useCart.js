@@ -1,0 +1,74 @@
+import { useCallback } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+
+import { addItemQuantity, addSubtotal, addToCart, addtotal, clearCart, removeCartItem, subItemQuantity, subtractSubtotal, subtractTotal } from '@/features/Cart/states/cartSlice';
+
+export default function useCart() {
+  const dispatch = useDispatch();
+  const cartItems = useSelector((state) => state.cart.cartItems);
+  const items = Array.isArray(cartItems) ? cartItems : Array.isArray(cartItems?.items) ? cartItems.items : [];
+
+  const addToCartHandler = useCallback((product, variant) => {
+    if (!product) return;
+
+    const variantId = variant?._id || null;
+    const variantAttributes = variant?.attribute || {};
+    const variantPrice = variant?.price;
+    const unitPrice =
+      typeof variantPrice === 'number'
+        ? variantPrice
+        : typeof variantPrice?.amount === 'number'
+          ? variantPrice.amount
+          : typeof product.price === 'number'
+            ? product.price
+            : product.price?.amount || 0;
+
+    dispatch(
+      addToCart({
+        _id: `cart-${product.id || product._id}-${variantId || 'default'}-${Date.now()}`,
+        productId: product,
+        variantId,
+        variantAttributes,
+        quantity: 1,
+        unitPrice,
+      })
+    );
+  }, [dispatch]);
+
+  const incrementCartItemHandler = useCallback((id) => {
+    dispatch(addItemQuantity(id));
+    dispatch(addSubtotal(id));
+    dispatch(addtotal(id));
+  }, [dispatch]);
+
+  const decrementCartItemHandler = useCallback((id) => {
+    const target = items.find((item) => item._id === id);
+    if (target && target.quantity <= 1) {
+      dispatch(removeCartItem(id));
+      return true;
+    }
+
+    dispatch(subItemQuantity(id));
+    dispatch(subtractSubtotal(id));
+    dispatch(subtractTotal(id));
+    return false;
+  }, [dispatch, items]);
+
+  const removeCartItemHandler = useCallback((id) => {
+    const removedItem = items.find((item) => item._id === id);
+    dispatch(removeCartItem(id));
+    return removedItem;
+  }, [dispatch, items]);
+
+  const clearCartHandler = useCallback(() => {
+    dispatch(clearCart());
+  }, [dispatch]);
+
+  return {
+    addToCartHandler,
+    incrementCartItemHandler,
+    decrementCartItemHandler,
+    removeCartItemHandler,
+    clearCartHandler,
+  };
+}

@@ -14,12 +14,6 @@ export default function ProductGrid({
 }) {
   return (
     <>
-      <View style={styles.productGridHeader}>
-        <Text style={styles.productCount}>
-          {products.length} PRODUCTS
-        </Text>
-      </View>
-
       <View style={styles.productGrid}>
         {products.map((product) => (
           <ProductCard
