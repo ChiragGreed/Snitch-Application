@@ -64,9 +64,8 @@ export const styles = StyleSheet.create({
         marginLeft: SnitchSpacing.xs,
         borderWidth: 1.5,
         borderColor: SnitchColors.border,
-    },
-    avatarImage: {
-        width: '100%',
-        height: '100%',
+        backgroundColor: SnitchColors.surfaceContainerLow,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
 });
