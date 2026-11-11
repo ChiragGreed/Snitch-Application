@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text } from 'react-native';
 import ProductCard from './ProductCard';
-import { styles } from '@/shared/styles/homeStyles';
+import { styles } from '@/features/Products/styles/productStyles';
 
 export default function ProductGrid({
   products = [],

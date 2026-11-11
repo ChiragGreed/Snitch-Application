@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, ScrollView, Pressable, Text } from 'react-native';
-import { styles } from '@/shared/styles/homeStyles';
+import { styles } from '@/features/Home/styles/homeStyles';
 
 export default function CategoryChips({ categories, selectedCategory, onSelect }) {
   return (

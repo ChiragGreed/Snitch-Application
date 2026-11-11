@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, Pressable } from 'react-native';
 import { SnitchIcon } from '@/components/snitch-icon';
 import { SnitchColors } from '@/constants/snitch-theme';
-import { styles } from '@/shared/styles/homeStyles';
+import { styles } from '@/features/Home/styles/homeStyles';
 
 export default function EditorialSections({ onToast }) {
   return (

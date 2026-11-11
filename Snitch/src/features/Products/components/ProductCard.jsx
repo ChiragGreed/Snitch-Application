@@ -4,7 +4,7 @@ import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { SnitchIcon } from '@/components/snitch-icon';
 import { SnitchColors } from '@/constants/snitch-theme';
-import { styles } from '@/shared/styles/homeStyles';
+import { styles } from '@/features/Products/styles/productStyles';
 
 export default function ProductCard({ product, isWishlisted, onToggleWishlist, onAddToCart }) {
   const router = useRouter();

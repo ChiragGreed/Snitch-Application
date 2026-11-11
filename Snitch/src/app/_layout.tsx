@@ -5,6 +5,7 @@ import { useColorScheme } from 'react-native';
 import { Provider as ReduxProvider } from 'react-redux';
 import { persistor, reduxStore } from '../Store';
 import { PersistGate } from "redux-persist/integration/react";
+import UpdateManager from '@/components/UpdateManager';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
 
@@ -23,6 +24,7 @@ export default function RootLayout() {
             <Stack.Screen name="products/[id]" options={{ headerShown: false }} />
           </Stack>
         </ThemeProvider>
+        <UpdateManager />
 
       </PersistGate>
     </ReduxProvider>

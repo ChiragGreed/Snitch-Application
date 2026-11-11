@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, Pressable } from 'react-native';
 import { Image } from 'expo-image';
 import { SnitchColors } from '@/constants/snitch-theme';
-import { styles } from '@/shared/styles/cartStyles';
+import { styles } from '@/features/Cart/styles/cartStyles';
 
 export default function CartCompleteLook({ item, onAddAndSave, isAdded }) {
   if (!item) return null;
@@ -61,4 +61,3 @@ export default function CartCompleteLook({ item, onAddAndSave, isAdded }) {
     </View>
   );
 }
-

@@ -1,8 +1,8 @@
 import React from 'react';
-import { View, TextInput, Pressable, StyleSheet } from 'react-native';
+import { View, TextInput, Pressable } from 'react-native';
 import { SnitchIcon } from '@/components/snitch-icon';
-import { SnitchColors, SnitchSpacing, SnitchRadius } from '@/constants/snitch-theme';
-import { styles as sharedStyles } from '@/shared/styles/homeStyles';
+import { SnitchColors } from '@/constants/snitch-theme';
+import { styles } from '@/features/Home/styles/homeStyles';
 
 /**
  * SearchBar
@@ -15,11 +15,11 @@ import { styles as sharedStyles } from '@/shared/styles/homeStyles';
  */
 export default function SearchBar({ value, onChangeText, onSort, onToast }) {
   return (
-    <View style={sharedStyles.searchRow}>
-      <View style={sharedStyles.searchContainer}>
+    <View style={styles.searchRow}>
+      <View style={styles.searchContainer}>
         <SnitchIcon name="search" size={18} color={SnitchColors.textMuted} />
         <TextInput
-          style={sharedStyles.searchInput}
+          style={styles.searchInput}
           placeholder="Search pieces, looks…"
           placeholderTextColor={SnitchColors.textLight}
           value={value}
@@ -30,7 +30,7 @@ export default function SearchBar({ value, onChangeText, onSort, onToast }) {
       </View>
 
       <Pressable
-        style={sharedStyles.searchFilterButton}
+        style={styles.searchFilterButton}
         onPress={onSort}
         accessibilityLabel="Sort and filter"
       >
@@ -39,4 +39,3 @@ export default function SearchBar({ value, onChangeText, onSort, onToast }) {
     </View>
   );
 }
-

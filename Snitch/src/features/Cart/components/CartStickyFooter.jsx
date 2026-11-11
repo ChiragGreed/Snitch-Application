@@ -3,7 +3,7 @@ import { View, Text, Pressable } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SnitchIcon } from '@/components/snitch-icon';
 import { SnitchColors } from '@/constants/snitch-theme';
-import { styles } from '@/shared/styles/cartStyles';
+import { styles } from '@/features/Cart/styles/cartStyles';
 
 export default function CartStickyFooter({
   totalPayable = 0,

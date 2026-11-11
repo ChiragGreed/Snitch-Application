@@ -16,7 +16,7 @@ import useCart from '@/features/Cart/hooks/useCart';
 import Toast from '@/shared/components/Toast';
 import { SnitchIcon } from '@/components/snitch-icon';
 import { SnitchColors } from '@/constants/snitch-theme';
-import { styles } from '@/shared/styles/cartStyles';
+import { styles } from '@/features/Cart/styles/cartStyles';
 
 const FREE_SHIPPING_THRESHOLD = 3196;
 

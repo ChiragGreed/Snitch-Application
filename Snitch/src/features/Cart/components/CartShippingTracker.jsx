@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text } from 'react-native';
 import { SnitchIcon } from '@/components/snitch-icon';
 import { SnitchColors } from '@/constants/snitch-theme';
-import { styles } from '@/shared/styles/cartStyles';
+import { styles } from '@/features/Cart/styles/cartStyles';
 
 export default function CartShippingTracker({
   currentTotal,

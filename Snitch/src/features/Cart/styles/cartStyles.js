@@ -1,4 +1,4 @@
-import { StyleSheet, Platform } from 'react-native';
+import { Platform, StyleSheet } from 'react-native';
 import { SnitchColors, SnitchSpacing, SnitchRadius } from '@/constants/snitch-theme';
 
 export const styles = StyleSheet.create({

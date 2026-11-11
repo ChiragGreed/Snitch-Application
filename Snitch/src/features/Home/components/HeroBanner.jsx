@@ -2,7 +2,7 @@ import React, { useRef, useState } from 'react';
 import { View, Text, Pressable, ImageBackground, FlatList } from 'react-native';
 import { SnitchIcon } from '@/components/snitch-icon';
 import { SnitchColors } from '@/constants/snitch-theme';
-import { styles } from '@/shared/styles/homeStyles';
+import { styles } from '@/features/Home/styles/homeStyles';
 
 const heroImages = [
   'https://ik.imagekit.io/lfqmv9rcq/Snitch/Hero%20Images/Hero_image.png',

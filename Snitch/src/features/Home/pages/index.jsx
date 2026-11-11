@@ -15,10 +15,10 @@ import EditorialSections from '@/features/Home/components/EditorialSections';
 import ProductGrid from '@/features/Products/components/ProductGrid';
 import useProducts from '@/features/Products/hooks/useProducts';
 
-import SearchBar from '@/shared/components/SearchBar';
+import SearchBar from '@/features/Home/components/SearchBar';
 import Toast from '@/shared/components/Toast';
 
-import { styles } from '@/shared/styles/homeStyles';
+import { styles } from '@/features/Home/styles/homeStyles';
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();

@@ -3,7 +3,7 @@ import { View, Text, Pressable } from 'react-native';
 import { Image } from 'expo-image';
 import { SnitchIcon } from '@/components/snitch-icon';
 import { SnitchColors } from '@/constants/snitch-theme';
-import { styles } from '@/shared/styles/homeStyles';
+import { styles } from '@/features/Home/styles/homeStyles';
 
 export default function HomeHeader({ onToast }) {
   return (

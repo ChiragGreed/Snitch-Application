@@ -3,7 +3,7 @@ import { View, Text, Pressable } from 'react-native';
 import { Image } from 'expo-image';
 import { SnitchIcon } from '@/components/snitch-icon';
 import { SnitchColors } from '@/constants/snitch-theme';
-import { styles } from '@/shared/styles/cartStyles';
+import { styles } from '@/features/Cart/styles/cartStyles';
 
 export default function CartHeader({ onToast, onSearch, onProfile }) {
   return (
@@ -46,4 +46,3 @@ export default function CartHeader({ onToast, onSearch, onProfile }) {
     </View>
   );
 }
-
