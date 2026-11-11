@@ -31,19 +31,25 @@ export default function Toast({ message, top = 60, type = 'default' }) {
 
   if (!message) return null;
   const isSuccess = type === 'success';
+  const isWarning = type === 'warning';
 
   return (
     <Animated.View
       style={[
         styles.container,
         isSuccess && styles.successContainer,
+        isWarning && styles.warningContainer,
         { top, opacity },
       ]}
       pointerEvents="none"
     >
-      {isSuccess ? (
-        <View style={styles.successIcon}>
-          <SnitchIcon name="check_circle" size={18} color={SnitchColors.onPrimary} />
+      {isSuccess || isWarning ? (
+        <View style={[styles.icon, isSuccess && styles.successIcon]}>
+          <SnitchIcon
+            name={isSuccess ? 'check_circle' : 'warning'}
+            size={18}
+            color={SnitchColors.onPrimary}
+          />
         </View>
       ) : null}
       <Text style={styles.text}>{message}</Text>
@@ -73,13 +79,18 @@ const styles = StyleSheet.create({
   successContainer: {
     backgroundColor: 'black',
   },
-  successIcon: {
+  warningContainer: {
+    backgroundColor: '#B54747',
+  },
+  icon: {
     width: 22,
     height: 22,
-    backgroundColor: '#27834A',
-    borderRadius: SnitchRadius.full,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  successIcon: {
+    backgroundColor: '#27834A',
+    borderRadius: SnitchRadius.full,
   },
   text: {
     color: '#FFFFFF',

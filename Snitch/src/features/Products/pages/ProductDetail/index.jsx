@@ -56,6 +56,10 @@ export default function ProductDetailPage() {
     showToast('Added to bag', 'success');
   }, [addToCartHandler, showToast]);
 
+  const handleBuyNow = useCallback(() => {
+    showToast('Please sign in to continue with Buy Now.', 'warning');
+  }, [showToast]);
+
   if (loading) {
     return (
       <View style={styles.centered}>
@@ -80,6 +84,7 @@ export default function ProductDetailPage() {
           isWishlisted={isInList(product)}
           onToggleWishlist={handleToggleWishlist}
           onAddToCart={handleAddToCart}
+          onBuyNow={handleBuyNow}
         />
       </SafeAreaProvider>
       <Toast

@@ -62,7 +62,13 @@ const getVariantId = (variant) => {
 // Component
 // --------------------------------
 
-export default function ProductDetailScreen({ product, onAddToCart, onToggleWishlist, isWishlisted, }) {
+export default function ProductDetailScreen({
+  product,
+  onAddToCart,
+  onBuyNow,
+  onToggleWishlist,
+  isWishlisted,
+}) {
   const insets = useSafeAreaInsets();
   const router = useRouter();
 
@@ -726,7 +732,7 @@ export default function ProductDetailScreen({ product, onAddToCart, onToggleWish
             !canPurchase && styles.disabledButton,
           ]}
           disabled={!canPurchase}
-          onPress={handleAddToCart}
+          onPress={onBuyNow}
         >
           <Text style={styles.buyNowText}>
             BUY NOW

@@ -39,6 +39,7 @@ const SF_MAPPING: Record<string, string> = {
   verified_user: 'checkmark.shield',
   published_with_changes: 'arrow.triangle.2.circlepath',
   check_circle: 'checkmark.circle.fill',
+  warning: 'exclamationmark.triangle.fill',
 };
 
 const UNICODE_FALLBACK: Record<string, string> = {
@@ -78,6 +79,7 @@ const UNICODE_FALLBACK: Record<string, string> = {
   verified_user: '🛡',
   published_with_changes: '↺',
   check_circle: '✓',
+  warning: '⚠',
 };
 
 interface SnitchIconProps {
