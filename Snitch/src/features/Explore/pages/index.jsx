@@ -9,6 +9,7 @@ import { SnitchIcon } from '@/components/snitch-icon';
 
 import useProducts from '@/features/Products/hooks/useProducts';
 import useWishList from '@/features/Wishlist/hooks/useWishList';
+import useCart from '@/features/Cart/hooks/useCart';
 import SnitchHeader from '@/shared/components/SnitchHeader';
 import { useRouter } from 'expo-router';
 import { getCategoriesApi } from '@/features/Products/services/productApi';
@@ -33,6 +34,7 @@ export default function ExploreScreen() {
   const insets = useSafeAreaInsets();
   const { getProductsHandler } = useProducts();
   const { wishListItems, isInList, toggleListHandler } = useWishList();
+  const { addToCartHandler } = useCart();
 
   const products = useSelector((state) => state.products.AllProducts);
   const productStatus = useSelector((state) => state.products.status);
@@ -51,6 +53,7 @@ export default function ExploreScreen() {
   const [sortIndex, setSortIndex] = useState(0);
   const [inStockOnly, setInStockOnly] = useState(false);
   const [toastMessage, setToastMessage] = useState(null);
+  const [toastType, setToastType] = useState('default');
 
   useEffect(() => {
     getProductsHandler();
@@ -218,18 +221,23 @@ export default function ExploreScreen() {
       ? formatName(selectedParent.name)
       : 'Explore';
 
-  const triggerToast = (message) => {
+  const triggerToast = (message, type = 'default') => {
     setToastMessage(message);
+    setToastType(type);
   };
 
   const toggleWishlist = (product) => {
     const added = toggleListHandler(product);
-    triggerToast(added ? `Saved "${product.title}" to wishlist`
-      : `Removed "${product.title}" from wishlist`);
+    triggerToast(
+      added ? 'Added to wishlist' : 'Removed from wishlist',
+      added ? 'success' : 'default'
+    );
   };
 
   const handleAddToCart = (product) => {
-    triggerToast(`Added ${product.title} to bag`);
+    if (!product) return;
+    addToCartHandler(product);
+    triggerToast('Added to bag', 'success');
   };
 
   const handleNavigateProduct = useCallback(
@@ -250,7 +258,7 @@ export default function ExploreScreen() {
 
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
-      <Toast message={toastMessage} top={insets.top + 8} />
+      <Toast message={toastMessage} type={toastType} top={insets.top + 8} />
 
       <SnitchHeader
         title="Explore"

@@ -38,6 +38,7 @@ const SF_MAPPING: Record<string, string> = {
   info: 'info.circle',
   verified_user: 'checkmark.shield',
   published_with_changes: 'arrow.triangle.2.circlepath',
+  check_circle: 'checkmark.circle.fill',
 };
 
 const UNICODE_FALLBACK: Record<string, string> = {
@@ -76,6 +77,7 @@ const UNICODE_FALLBACK: Record<string, string> = {
   info: 'ⓘ',
   verified_user: '🛡',
   published_with_changes: '↺',
+  check_circle: '✓',
 };
 
 interface SnitchIconProps {
@@ -112,4 +114,3 @@ const styles = StyleSheet.create({
     textAlignVertical: 'center',
   },
 });
-

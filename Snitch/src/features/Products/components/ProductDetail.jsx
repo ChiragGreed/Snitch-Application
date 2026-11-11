@@ -255,7 +255,6 @@ export default function ProductDetailScreen({ product, onAddToCart, onToggleWish
 
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
-
       {/* ── Header ── */}
 
       <View style={styles.header}>

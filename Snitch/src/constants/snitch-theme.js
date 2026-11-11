@@ -42,6 +42,7 @@ export const SnitchColors = {
 
   // Semantics
   error: '#BA1A1A',
+  success: '#27834A',
   ratingStar: '#C5A059',
   discountBadge: '#74593F',
   tagBg: 'rgba(255, 255, 255, 0.85)',

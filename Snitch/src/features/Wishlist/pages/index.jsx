@@ -28,6 +28,7 @@ export default function WishlistScreen() {
   const { addToCartHandler } = useCart();
   const [showInStockOnly, setShowInStockOnly] = useState(false);
   const [toastMessage, setToastMessage] = useState(null);
+  const [toastType, setToastType] = useState('default');
 
   const availableItems = useMemo(
     () => wishListItems.filter(isProductInStock),
@@ -35,8 +36,9 @@ export default function WishlistScreen() {
   );
   const visibleItems = showInStockOnly ? availableItems : wishListItems;
 
-  const triggerToast = useCallback((message) => {
+  const triggerToast = useCallback((message, type = 'default') => {
     setToastMessage(message);
+    setToastType(type);
     setTimeout(() => setToastMessage(null), 2400);
   }, []);
 
@@ -48,7 +50,7 @@ export default function WishlistScreen() {
   const handleMoveToBag = useCallback((product) => {
     addToCartHandler(product);
     removeFromListHandler(product);
-    triggerToast('Moved to bag');
+    triggerToast('Added to bag', 'success');
   }, [addToCartHandler, removeFromListHandler, triggerToast]);
 
   const handleMoveAllToBag = useCallback(() => {
@@ -61,7 +63,7 @@ export default function WishlistScreen() {
       addToCartHandler(product);
       removeFromListHandler(product);
     });
-    triggerToast(`${availableItems.length} ${availableItems.length === 1 ? 'item' : 'items'} moved to bag`);
+    triggerToast('Added to bag', 'success');
   }, [addToCartHandler, availableItems, removeFromListHandler, triggerToast]);
 
   const handlePressProduct = useCallback((productId) => {
@@ -70,7 +72,7 @@ export default function WishlistScreen() {
 
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
-      <Toast message={toastMessage} top={insets.top + 50} />
+      <Toast message={toastMessage} type={toastType} top={insets.top + 50} />
 
       <SnitchHeader
         title="Wishlist"

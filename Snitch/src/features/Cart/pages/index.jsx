@@ -36,9 +36,11 @@ export default function CartScreen() {
   const { cartItems, subtotal, total, currency = 'INR' } = useSelector((state) => state.cart);
 
   const [toastMessage, setToastMessage] = useState(null);
+  const [toastType, setToastType] = useState('default');
 
-  const triggerToast = useCallback((msg) => {
+  const triggerToast = useCallback((msg, type = 'default') => {
     setToastMessage(msg);
+    setToastType(type);
     setTimeout(() => setToastMessage(null), 2400);
   }, []);
 
@@ -85,7 +87,7 @@ export default function CartScreen() {
     if (items.length === 0) return;
     items.forEach((item) => addToListHandler(item.productId));
     clearCartHandler();
-    triggerToast('All items moved to wishlist');
+    triggerToast('Added to wishlist', 'success');
   }, [addToListHandler, clearCartHandler, items, triggerToast]);
 
   const handleProceedToCheckout = useCallback(() => {
@@ -115,7 +117,7 @@ export default function CartScreen() {
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
       {/* Toast Notification */}
-      <Toast message={toastMessage} top={insets.top + 50} />
+      <Toast message={toastMessage} type={toastType} top={insets.top + 50} />
 
       {/* Header */}
       <SnitchHeader

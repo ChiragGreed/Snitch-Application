@@ -9,6 +9,7 @@ import { SnitchColors } from '@/constants/snitch-theme';
 import { useSelector } from 'react-redux';
 import useCart from '@/features/Cart/hooks/useCart';
 import useWishList from '@/features/Wishlist/hooks/useWishList';
+import Toast from '@/shared/components/Toast';
 
 export default function ProductDetailPage() {
   const { id } = useLocalSearchParams();
@@ -19,6 +20,7 @@ export default function ProductDetailPage() {
   const product = useSelector((state) => state.products.Product);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [toastEvent, setToastEvent] = useState({ id: 0, message: null, type: 'default' });
 
   useEffect(() => {
     if (!id) return;
@@ -39,13 +41,20 @@ export default function ProductDetailPage() {
 
   }, [id]);
 
+  const showToast = useCallback((message, type = 'default') => {
+    setToastEvent((current) => ({ id: current.id + 1, message, type }));
+  }, []);
+
   const handleToggleWishlist = useCallback((wishlistProduct) => {
-    toggleListHandler(wishlistProduct);
-  }, [toggleListHandler]);
+    const added = toggleListHandler(wishlistProduct);
+    showToast(added ? 'Added to wishlist' : 'Removed from wishlist', added ? 'success' : 'default');
+    return added;
+  }, [showToast, toggleListHandler]);
 
   const handleAddToCart = useCallback((p, variant) => {
     addToCartHandler(p, variant);
-  }, [addToCartHandler]);
+    showToast('Added to bag', 'success');
+  }, [addToCartHandler, showToast]);
 
   if (loading) {
     return (
@@ -64,18 +73,29 @@ export default function ProductDetailPage() {
   }
 
   return (
-    <SafeAreaProvider>
-      <ProductDetailScreen
-        product={product}
-        isWishlisted={isInList(product)}
-        onToggleWishlist={handleToggleWishlist}
-        onAddToCart={handleAddToCart}
+    <View style={styles.page}>
+      <SafeAreaProvider>
+        <ProductDetailScreen
+          product={product}
+          isWishlisted={isInList(product)}
+          onToggleWishlist={handleToggleWishlist}
+          onAddToCart={handleAddToCart}
+        />
+      </SafeAreaProvider>
+      <Toast
+        key={toastEvent.id}
+        message={toastEvent.message}
+        type={toastEvent.type}
+        top={60}
       />
-    </SafeAreaProvider>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  page: {
+    flex: 1,
+  },
   centered: {
     flex: 1,
     alignItems: 'center',

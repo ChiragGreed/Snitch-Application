@@ -41,10 +41,12 @@ export default function HomeScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortIndex, setSortIndex] = useState(0);
   const [toastMessage, setToastMessage] = useState(null);
+  const [toastType, setToastType] = useState('default');
 
   // Toast notification
-  const triggerToast = (message) => {
+  const triggerToast = (message, type = 'default') => {
     setToastMessage(message);
+    setToastType(type);
     setTimeout(() => setToastMessage(null), 2400);
   };
 
@@ -53,8 +55,9 @@ export default function HomeScreen() {
     const added = toggleListHandler(product);
     triggerToast(
       added
-        ? `Saved "${product.title}" to wishlist`
-        : `Removed "${product.title}" from wishlist`
+        ? 'Added to wishlist'
+        : 'Removed from wishlist',
+      added ? 'success' : 'default'
     );
   };
 
@@ -62,7 +65,7 @@ export default function HomeScreen() {
   const handleAddToCart = (product) => {
     if (!product) return;
     addToCartHandler(product);
-    triggerToast(`Added ${product.title} to bag`);
+    triggerToast('Added to bag', 'success');
   };
 
   // Sorting
@@ -108,7 +111,7 @@ export default function HomeScreen() {
 
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
-      <Toast message={toastMessage} top={insets.top + 54} />
+      <Toast message={toastMessage} type={toastType} top={insets.top + 54} />
 
       <SnitchHeader title="Home" onToast={triggerToast} />
 
