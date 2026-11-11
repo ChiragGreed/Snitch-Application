@@ -1,7 +1,5 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, Pressable, ImageBackground, FlatList } from 'react-native';
-import { SnitchIcon } from '@/components/snitch-icon';
-import { SnitchColors } from '@/constants/snitch-theme';
 import { styles } from '@/features/Home/styles/homeStyles';
 
 const heroImages = [
@@ -16,6 +14,27 @@ export default function HeroBanner({ onToast }) {
   const [activeSlide, setActiveSlide] = useState(0);
   const [sliderWidth, setSliderWidth] = useState(0);
   const sliderRef = useRef(null);
+
+  useEffect(() => {
+    if (sliderWidth === 0) return;
+
+    const interval = setInterval(() => {
+      let nextSlide = activeSlide + 1;
+
+      // Loop back to the first slide if we hit the end
+      if (nextSlide >= heroImages.length) {
+        nextSlide = 0;
+      }
+
+      sliderRef.current?.scrollToIndex({
+        index: nextSlide,
+        animated: true,
+      });
+    }, 3000); // Slides change every 3 seconds
+
+    // Clean up the interval on unmount or slide change
+    return () => clearInterval(interval);
+  }, [activeSlide, sliderWidth]);
 
   const handleScroll = ({ nativeEvent }) => {
     if (sliderWidth === 0) return;
@@ -51,8 +70,8 @@ export default function HeroBanner({ onToast }) {
               <Text style={styles.heroTitle}>Refined Minimalism for the Modern Era</Text>
               <Text style={styles.heroDescription} numberOfLines={2}>Structured silhouettes, breathable raw silks, and oversized tailoring designed for effortless sophistication.</Text>
               {/* <View style={styles.heroActionsRow}> */}
-                {/* <Pressable style={styles.heroShopButton} onPress={() => onToast('Opening AW25 Capsule collection')}><Text style={styles.heroShopButtonText}>SHOP THE CAPSULE</Text><SnitchIcon name="arrow_forward" size={15} color={SnitchColors.textPrimary} /></Pressable> */}
-                {/* <Pressable style={[styles.heroBookmarkButton, isBookmarked && styles.heroBookmarkActive]} onPress={() => { setIsBookmarked(!isBookmarked); onToast(isBookmarked ? 'Removed from saved capsules' : 'Capsule bookmarked'); }} accessibilityLabel="Bookmark Capsule"><SnitchIcon name={isBookmarked ? 'bookmark' : 'bookmark_border'} size={19} color="#FFFFFF" /></Pressable> */}
+              {/* <Pressable style={styles.heroShopButton} onPress={() => onToast('Opening AW25 Capsule collection')}><Text style={styles.heroShopButtonText}>SHOP THE CAPSULE</Text><SnitchIcon name="arrow_forward" size={15} color={SnitchColors.textPrimary} /></Pressable> */}
+              {/* <Pressable style={[styles.heroBookmarkButton, isBookmarked && styles.heroBookmarkActive]} onPress={() => { setIsBookmarked(!isBookmarked); onToast(isBookmarked ? 'Removed from saved capsules' : 'Capsule bookmarked'); }} accessibilityLabel="Bookmark Capsule"><SnitchIcon name={isBookmarked ? 'bookmark' : 'bookmark_border'} size={19} color="#FFFFFF" /></Pressable> */}
               {/* </View> */}
               <View style={styles.heroDotsContainer}>
                 {heroImages.map((_, index) => (
