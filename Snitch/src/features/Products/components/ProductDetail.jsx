@@ -274,7 +274,7 @@ export default function ProductDetailScreen({ product, onAddToCart, onToggleWish
         <View style={styles.headerRight}>
           <Pressable
             style={styles.headerBtn}
-            onPress={() => onToggleWishlist?.(product.id, product.title)}
+            onPress={() => onToggleWishlist?.(product)}
             accessibilityLabel="Wishlist"
           >
             <SnitchIcon
@@ -684,7 +684,7 @@ export default function ProductDetailScreen({ product, onAddToCart, onToggleWish
       >
         <Pressable
           style={styles.wishlistToggle}
-          onPress={() => onToggleWishlist?.(product.id, product.title)}
+          onPress={() => onToggleWishlist?.(product)}
           accessibilityLabel="Wishlist"
         >
           <SnitchIcon

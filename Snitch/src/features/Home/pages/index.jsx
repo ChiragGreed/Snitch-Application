@@ -6,8 +6,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CATEGORIES, SORT_OPTIONS } from '@/features/Home/data/homeData';
 import useCart from '@/features/Cart/hooks/useCart';
+import useWishList from '@/features/Wishlist/hooks/useWishList';
 
-import HomeHeader from '@/features/Home/components/HomeHeader';
+import SnitchHeader from '@/shared/components/SnitchHeader';
 import HeroBanner from '@/features/Home/components/HeroBanner';
 import CategoryChips from '@/features/Home/components/CategoryChips';
 import EditorialSections from '@/features/Home/components/EditorialSections';
@@ -25,6 +26,7 @@ export default function HomeScreen() {
 
   const { getProductsHandler } = useProducts();
   const { addToCartHandler } = useCart();
+  const { wishListItems, toggleListHandler } = useWishList();
 
   useEffect(() => {
     getProductsHandler();
@@ -38,7 +40,6 @@ export default function HomeScreen() {
   const [selectedCategory, setSelectedCategory] = useState('ALL PIECES');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortIndex, setSortIndex] = useState(0);
-  const [wishlist, setWishlist] = useState([]);
   const [toastMessage, setToastMessage] = useState(null);
 
   // Toast notification
@@ -48,18 +49,13 @@ export default function HomeScreen() {
   };
 
   // Wishlist
-  const toggleWishlist = (id, name) => {
-    setWishlist((previous) => {
-      const next = !previous[id];
-
-      triggerToast(
-        next
-          ? `Saved "${name}" to wishlist`
-          : `Removed "${name}" from wishlist`
-      );
-
-      return { ...previous, [id]: next };
-    });
+  const toggleWishlist = (product) => {
+    const added = toggleListHandler(product);
+    triggerToast(
+      added
+        ? `Saved "${product.title}" to wishlist`
+        : `Removed "${product.title}" from wishlist`
+    );
   };
 
   // Add to cart
@@ -114,7 +110,7 @@ export default function HomeScreen() {
     <View style={[styles.root, { paddingTop: insets.top }]}>
       <Toast message={toastMessage} top={insets.top + 54} />
 
-      <HomeHeader onToast={triggerToast} />
+      <SnitchHeader title="Home" onToast={triggerToast} />
 
       <ScrollView
         style={styles.scroll}
@@ -156,7 +152,7 @@ export default function HomeScreen() {
         ) : (
           <ProductGrid
             products={filteredProducts}
-            wishlist={wishlist}
+            wishlist={wishListItems}
             onToggleWishlist={toggleWishlist}
             onAddToCart={handleAddToCart}
             sortOptions={SORT_OPTIONS}

@@ -8,16 +8,17 @@ import useProducts from '@/features/Products/hooks/useProducts';
 import { SnitchColors } from '@/constants/snitch-theme';
 import { useSelector } from 'react-redux';
 import useCart from '@/features/Cart/hooks/useCart';
+import useWishList from '@/features/Wishlist/hooks/useWishList';
 
 export default function ProductDetailPage() {
   const { id } = useLocalSearchParams();
   const { getProductHandler } = useProducts();
   const { addToCartHandler } = useCart();
+  const { isInList, toggleListHandler } = useWishList();
 
   const product = useSelector((state) => state.products.Product);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [isWishlisted, setIsWishlisted] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -38,9 +39,9 @@ export default function ProductDetailPage() {
 
   }, [id]);
 
-  const handleToggleWishlist = useCallback(() => {
-    setIsWishlisted((prev) => !prev);
-  }, []);
+  const handleToggleWishlist = useCallback((wishlistProduct) => {
+    toggleListHandler(wishlistProduct);
+  }, [toggleListHandler]);
 
   const handleAddToCart = useCallback((p, variant) => {
     addToCartHandler(p, variant);
@@ -66,7 +67,7 @@ export default function ProductDetailPage() {
     <SafeAreaProvider>
       <ProductDetailScreen
         product={product}
-        isWishlisted={isWishlisted}
+        isWishlisted={isInList(product)}
         onToggleWishlist={handleToggleWishlist}
         onAddToCart={handleAddToCart}
       />

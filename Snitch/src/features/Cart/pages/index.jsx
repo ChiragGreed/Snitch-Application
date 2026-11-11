@@ -4,7 +4,7 @@ import { useSelector } from 'react-redux';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 
-import CartHeader from '@/features/Cart/components/CartHeader';
+import SnitchHeader from '@/shared/components/SnitchHeader';
 import CartItemCard from '@/features/Cart/components/CartItemCard';
 import CartShippingTracker from '@/features/Cart/components/CartShippingTracker';
 import CartOrderSummary from '@/features/Cart/components/CartOrderSummary';
@@ -12,6 +12,7 @@ import CartTrustBadges from '@/features/Cart/components/CartTrustBadges';
 import CartStickyFooter from '@/features/Cart/components/CartStickyFooter';
 
 import useCart from '@/features/Cart/hooks/useCart';
+import useWishList from '@/features/Wishlist/hooks/useWishList';
 
 import Toast from '@/shared/components/Toast';
 import { SnitchIcon } from '@/components/snitch-icon';
@@ -29,6 +30,7 @@ export default function CartScreen() {
     removeCartItemHandler,
     clearCartHandler,
   } = useCart();
+  const { addToListHandler } = useWishList();
 
   // Read exclusively from Redux cart state
   const { cartItems, subtotal, total, currency = 'INR' } = useSelector((state) => state.cart);
@@ -81,9 +83,10 @@ export default function CartScreen() {
 
   const handleMoveAllToWishlist = useCallback(() => {
     if (items.length === 0) return;
+    items.forEach((item) => addToListHandler(item.productId));
     clearCartHandler();
     triggerToast('All items moved to wishlist');
-  }, [clearCartHandler, items.length, triggerToast]);
+  }, [addToListHandler, clearCartHandler, items, triggerToast]);
 
   const handleProceedToCheckout = useCallback(() => {
     if (items.length === 0) {
@@ -115,9 +118,11 @@ export default function CartScreen() {
       <Toast message={toastMessage} top={insets.top + 50} />
 
       {/* Header */}
-      <CartHeader
+      <SnitchHeader
+        title="Cart"
         onToast={triggerToast}
-        onSearch={() => triggerToast('Search collection')}
+        onSearch={() => router.push('/explore')}
+        onNotifications={() => triggerToast('No new notifications')}
         onProfile={() => router.push('/profile')}
       />
 

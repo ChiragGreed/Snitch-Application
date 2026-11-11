@@ -1,5 +1,5 @@
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { View, Text, TextInput, ScrollView, Pressable, Switch, ActivityIndicator, StyleSheet } from 'react-native';
 import { useSelector } from 'react-redux';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -8,6 +8,9 @@ import { SnitchColors, SnitchSpacing, SnitchRadius } from '@/constants/snitch-th
 import { SnitchIcon } from '@/components/snitch-icon';
 
 import useProducts from '@/features/Products/hooks/useProducts';
+import useWishList from '@/features/Wishlist/hooks/useWishList';
+import SnitchHeader from '@/shared/components/SnitchHeader';
+import { useRouter } from 'expo-router';
 import { getCategoriesApi } from '@/features/Products/services/productApi';
 import ProductCard from '@/features/Products/components/ProductCard';
 import Toast from '@/shared/components/Toast';
@@ -29,11 +32,13 @@ const formatName = (value = '') =>
 export default function ExploreScreen() {
   const insets = useSafeAreaInsets();
   const { getProductsHandler } = useProducts();
+  const { wishListItems, isInList, toggleListHandler } = useWishList();
 
   const products = useSelector((state) => state.products.AllProducts);
   const productStatus = useSelector((state) => state.products.status);
   const productError = useSelector((state) => state.products.error);
 
+  const router = useRouter();
   const [categories, setCategories] = useState([]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
   const [categoryError, setCategoryError] = useState(null);
@@ -42,9 +47,9 @@ export default function ExploreScreen() {
   const [selectedChildId, setSelectedChildId] = useState(null);
 
   const [searchQuery, setSearchQuery] = useState('');
+  const searchInputRef = useRef(null);
   const [sortIndex, setSortIndex] = useState(0);
   const [inStockOnly, setInStockOnly] = useState(false);
-  const [wishlist, setWishlist] = useState({});
   const [toastMessage, setToastMessage] = useState(null);
 
   useEffect(() => {
@@ -217,23 +222,29 @@ export default function ExploreScreen() {
     setToastMessage(message);
   };
 
-  const toggleWishlist = (id, name) => {
-    setWishlist((previous) => {
-      const isSaved = !previous[id];
-
-      triggerToast(
-        isSaved
-          ? `Saved "${name}" to wishlist`
-          : `Removed "${name}" from wishlist`
-      );
-
-      return { ...previous, [id]: isSaved };
-    });
+  const toggleWishlist = (product) => {
+    const added = toggleListHandler(product);
+    triggerToast(added ? `Saved "${product.title}" to wishlist`
+      : `Removed "${product.title}" from wishlist`);
   };
 
   const handleAddToCart = (product) => {
     triggerToast(`Added ${product.title} to bag`);
   };
+
+  const handleNavigateProduct = useCallback(
+    (productId) => {
+      if (productId) {
+        router.push(`/products/${productId}`);
+      }
+    },
+    [router]
+  );
+
+  const handleExploreMore = useCallback(() => {
+    router.push('/');
+  }, [router]);
+
 
   const loading = categoriesLoading || productStatus === 'idle' || productStatus === 'loading';
 
@@ -241,13 +252,21 @@ export default function ExploreScreen() {
     <View style={[styles.root, { paddingTop: insets.top }]}>
       <Toast message={toastMessage} top={insets.top + 8} />
 
+      <SnitchHeader
+        title="Explore"
+        onToast={triggerToast}
+        onSearch={() => searchInputRef.current?.focus()}
+        onNotifications={() => triggerToast('No new notifications')}
+        onProfile={() => router.push('/profile')}
+      />
+
       {/* Search header */}
       <View style={styles.header}>
-        <Text style={styles.brand}>SNITCH</Text>
 
         <View style={styles.headerSearch}>
           <SnitchIcon name="search" size={19} color={SnitchColors.textPrimary} />
           <TextInput
+            ref={searchInputRef}
             value={searchQuery}
             onChangeText={setSearchQuery}
             placeholder="Search products"
@@ -430,7 +449,7 @@ export default function ExploreScreen() {
               <ProductCard
                 key={product.id}
                 product={product}
-                isWishlisted={!!wishlist[product.id]}
+                isWishlisted={isInList(product)}
                 onToggleWishlist={toggleWishlist}
                 onAddToCart={handleAddToCart}
               />

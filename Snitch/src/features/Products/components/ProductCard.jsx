@@ -23,7 +23,7 @@ export default function ProductCard({ product, isWishlisted, onToggleWishlist, o
         </View>
         <Pressable
           style={styles.wishlistButton}
-          onPress={(e) => { onToggleWishlist(product.id, product.title); }}
+          onPress={() => onToggleWishlist(product)}
           accessibilityLabel="Wishlist"
         >
           <SnitchIcon name={isWishlisted ? 'favorite' : 'favorite_border'} size={16} color={isWishlisted ? SnitchColors.error : SnitchColors.textPrimary} />
