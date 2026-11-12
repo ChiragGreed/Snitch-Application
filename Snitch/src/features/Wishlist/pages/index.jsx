@@ -1,14 +1,23 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { useRouter } from 'expo-router';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { SnitchIcon } from '@/components/snitch-icon';
 import WishListItemCard from '../components/WishListItemCard';
+import CreateListModal from '../components/CreateListModal';
+import AddToListModal from '../components/AddToListModal';
 import { SnitchColors, SnitchRadius, SnitchSpacing } from '@/constants/snitch-theme';
 import useCart from '@/features/Cart/hooks/useCart';
 import SnitchHeader from '@/shared/components/SnitchHeader';
 import useWishList from '@/features/Wishlist/hooks/useWishList';
+import useCustomLists from '@/features/Wishlist/hooks/useCustomLists';
 import Toast from '@/shared/components/Toast';
 
 const getProductId = (product) => product?.id ?? product?._id;
@@ -21,20 +30,36 @@ const isProductInStock = (product) => {
   return true;
 };
 
+// Sentinel filter values
+const FILTER_ALL = '__ALL__';
+const FILTER_IN_STOCK = '__IN_STOCK__';
+
 export default function WishlistScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { wishListItems, removeFromListHandler } = useWishList();
   const { addToCartHandler } = useCart();
-  const [showInStockOnly, setShowInStockOnly] = useState(false);
+  const {
+    lists,
+    createList,
+    deleteList,
+    addItem,
+    removeItem,
+    isItemInList,
+    getListItems,
+  } = useCustomLists();
+
+  // ─── Filter state ───────────────────────────────────────────────
+  // activeFilter: FILTER_ALL | FILTER_IN_STOCK | <custom list id>
+  const [activeFilter, setActiveFilter] = useState(FILTER_ALL);
+
+  // ─── Modal state ─────────────────────────────────────────────────
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [addToListTarget, setAddToListTarget] = useState(null); // { id, name }
+
+  // ─── Toast ───────────────────────────────────────────────────────
   const [toastMessage, setToastMessage] = useState(null);
   const [toastType, setToastType] = useState('default');
-
-  const availableItems = useMemo(
-    () => wishListItems.filter(isProductInStock),
-    [wishListItems]
-  );
-  const visibleItems = showInStockOnly ? availableItems : wishListItems;
 
   const triggerToast = useCallback((message, type = 'default') => {
     setToastMessage(message);
@@ -42,23 +67,44 @@ export default function WishlistScreen() {
     setTimeout(() => setToastMessage(null), 2400);
   }, []);
 
-  const handleRemove = useCallback((product) => {
-    removeFromListHandler(product);
-    triggerToast('Removed from wishlist');
-  }, [removeFromListHandler, triggerToast]);
+  // ─── Derived data ─────────────────────────────────────────────────
+  const availableItems = useMemo(
+    () => wishListItems.filter(isProductInStock),
+    [wishListItems]
+  );
 
-  const handleMoveToBag = useCallback((product) => {
-    addToCartHandler(product);
-    removeFromListHandler(product);
-    triggerToast('Added to bag', 'success');
-  }, [addToCartHandler, removeFromListHandler, triggerToast]);
+  const visibleItems = useMemo(() => {
+    if (activeFilter === FILTER_ALL) return wishListItems;
+    if (activeFilter === FILTER_IN_STOCK) return availableItems;
+    return getListItems(activeFilter, wishListItems);
+  }, [activeFilter, wishListItems, availableItems, getListItems]);
+
+  // ─── Handlers: wishlist ───────────────────────────────────────────
+  const handleRemove = useCallback(
+    (product) => {
+      // Also remove from all custom lists
+      const pid = String(getProductId(product) ?? '');
+      lists.forEach((l) => removeItem(l.id, pid));
+      removeFromListHandler(product);
+      triggerToast('Removed from wishlist');
+    },
+    [removeFromListHandler, triggerToast, lists, removeItem]
+  );
+
+  const handleMoveToBag = useCallback(
+    (product) => {
+      addToCartHandler(product);
+      removeFromListHandler(product);
+      triggerToast('Added to bag', 'success');
+    },
+    [addToCartHandler, removeFromListHandler, triggerToast]
+  );
 
   const handleMoveAllToBag = useCallback(() => {
     if (availableItems.length === 0) {
       triggerToast('No in-stock items to move');
       return;
     }
-
     availableItems.forEach((product) => {
       addToCartHandler(product);
       removeFromListHandler(product);
@@ -66,9 +112,49 @@ export default function WishlistScreen() {
     triggerToast('Added to bag', 'success');
   }, [addToCartHandler, availableItems, removeFromListHandler, triggerToast]);
 
-  const handlePressProduct = useCallback((productId) => {
-    if (productId != null) router.push(`/products/${productId}`);
-  }, [router]);
+  const handlePressProduct = useCallback(
+    (productId) => {
+      if (productId != null) router.push(`/products/${productId}`);
+    },
+    [router]
+  );
+
+  // ─── Handlers: custom lists ───────────────────────────────────────
+  const handleCreateList = useCallback(
+    (name) => {
+      const id = createList(name);
+      triggerToast(`"${name}" list created`, 'success');
+      // Switch to the new list and immediately open add-items modal
+      setActiveFilter(id);
+      const newList = { id, name };
+      setAddToListTarget(newList);
+    },
+    [createList, triggerToast]
+  );
+
+  const handleDeleteList = useCallback(
+    (listId) => {
+      deleteList(listId);
+      if (activeFilter === listId) setActiveFilter(FILTER_ALL);
+      triggerToast('List deleted');
+    },
+    [deleteList, activeFilter, triggerToast]
+  );
+
+  const handleToggleItemInList = useCallback(
+    (item) => {
+      if (!addToListTarget) return;
+      if (isItemInList(addToListTarget.id, item)) {
+        removeItem(addToListTarget.id, getProductId(item));
+      } else {
+        addItem(addToListTarget.id, item);
+      }
+    },
+    [addToListTarget, isItemInList, addItem, removeItem]
+  );
+
+  // ─── Render ───────────────────────────────────────────────────────
+  const activeCustomList = lists.find((l) => l.id === activeFilter);
 
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
@@ -82,6 +168,25 @@ export default function WishlistScreen() {
         onProfile={() => router.push('/profile')}
       />
 
+      {/* ── Modals ── */}
+      <CreateListModal
+        visible={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onCreate={handleCreateList}
+      />
+
+      {addToListTarget && (
+        <AddToListModal
+          visible={!!addToListTarget}
+          listName={addToListTarget.name}
+          wishlistItems={wishListItems}
+          isInList={(item) => isItemInList(addToListTarget.id, item)}
+          onToggleItem={handleToggleItemInList}
+          onClose={() => setAddToListTarget(null)}
+        />
+      )}
+
+      {/* ── Empty state ── */}
       {wishListItems.length === 0 ? (
         <View style={styles.emptyState}>
           <View style={styles.emptyIcon}>
@@ -97,40 +202,133 @@ export default function WishlistScreen() {
         </View>
       ) : (
         <>
+          {/* ── Toolbar ── */}
           <View style={styles.toolbar}>
-            <View style={styles.filters}>
+            {/* Filter chips (scrollable row) */}
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.filtersRow}
+            >
+              {/* All */}
               <Pressable
-                style={[styles.filterButton, !showInStockOnly && styles.filterButtonActive]}
-                onPress={() => setShowInStockOnly(false)}
+                style={[
+                  styles.filterButton,
+                  activeFilter === FILTER_ALL && styles.filterButtonActive,
+                ]}
+                onPress={() => setActiveFilter(FILTER_ALL)}
                 accessibilityRole="button"
-                accessibilityState={{ selected: !showInStockOnly }}
+                accessibilityState={{ selected: activeFilter === FILTER_ALL }}
               >
-                <Text style={[styles.filterText, !showInStockOnly && styles.filterTextActive]}>
+                <Text
+                  style={[
+                    styles.filterText,
+                    activeFilter === FILTER_ALL && styles.filterTextActive,
+                  ]}
+                >
                   All ({wishListItems.length})
                 </Text>
               </Pressable>
+
+              {/* In Stock */}
               <Pressable
-                style={[styles.filterButton, showInStockOnly && styles.filterButtonActive]}
-                onPress={() => setShowInStockOnly(true)}
+                style={[
+                  styles.filterButton,
+                  activeFilter === FILTER_IN_STOCK && styles.filterButtonActive,
+                ]}
+                onPress={() => setActiveFilter(FILTER_IN_STOCK)}
                 accessibilityRole="button"
-                accessibilityState={{ selected: showInStockOnly }}
+                accessibilityState={{ selected: activeFilter === FILTER_IN_STOCK }}
               >
-                <Text style={[styles.filterText, showInStockOnly && styles.filterTextActive]}>
+                <Text
+                  style={[
+                    styles.filterText,
+                    activeFilter === FILTER_IN_STOCK && styles.filterTextActive,
+                  ]}
+                >
                   In Stock ({availableItems.length})
                 </Text>
               </Pressable>
-            </View>
-            <Pressable
-              style={[styles.moveAllButton, availableItems.length === 0 && styles.moveAllButtonDisabled]}
-              onPress={handleMoveAllToBag}
-              accessibilityRole="button"
-              accessibilityLabel="Move all in-stock items to bag"
-            >
-              <SnitchIcon name="shopping_bag" size={16} color={SnitchColors.textPrimary} />
-              <Text style={styles.moveAllText}>Move All</Text>
-            </Pressable>
+
+              {/* Custom lists */}
+              {lists.map((list) => {
+                const isActive = activeFilter === list.id;
+                return (
+                  <View key={list.id} style={styles.customFilterChipWrapper}>
+                    <Pressable
+                      style={[
+                        styles.filterButton,
+                        isActive && styles.filterButtonActive,
+                      ]}
+                      onPress={() => setActiveFilter(list.id)}
+                      accessibilityRole="button"
+                      accessibilityState={{ selected: isActive }}
+                    >
+                      <Text
+                        style={[
+                          styles.filterText,
+                          isActive && styles.filterTextActive,
+                        ]}
+                        numberOfLines={1}
+                      >
+                        {list.name} ({list.itemIds.length})
+                      </Text>
+                    </Pressable>
+                  </View>
+                );
+              })}
+
+              {/* Create List button */}
+              <Pressable
+                style={styles.createListChip}
+                onPress={() => setShowCreateModal(true)}
+                accessibilityRole="button"
+                accessibilityLabel="Create a new list"
+              >
+                <SnitchIcon name="add" size={15} color={SnitchColors.textMuted} />
+                <Text style={styles.createListChipText}>Create your list</Text>
+              </Pressable>
+            </ScrollView>
+
+            {/* Move all button — only for All / In Stock views */}
+            {(activeFilter === FILTER_ALL || activeFilter === FILTER_IN_STOCK) && (
+              <Pressable
+                style={[
+                  styles.moveAllButton,
+                  availableItems.length === 0 && styles.moveAllButtonDisabled,
+                ]}
+                onPress={handleMoveAllToBag}
+                accessibilityRole="button"
+                accessibilityLabel="Move all in-stock items to bag"
+              >
+                <SnitchIcon name="shopping_bag" size={16} color={SnitchColors.textPrimary} />
+                <Text style={styles.moveAllText}>Move All</Text>
+              </Pressable>
+            )}
+
+            {/* Add items / Delete list — for custom list views */}
+            {activeCustomList && (
+              <View style={styles.listActions}>
+                <Pressable
+                  style={styles.listActionButton}
+                  onPress={() => setAddToListTarget(activeCustomList)}
+                  accessibilityLabel="Add items to list"
+                >
+                  <SnitchIcon name="edit" size={15} color={SnitchColors.textPrimary} />
+                  <Text style={styles.listActionText}>Edit</Text>
+                </Pressable>
+                <Pressable
+                  style={[styles.listActionButton, styles.listActionDeleteButton]}
+                  onPress={() => handleDeleteList(activeCustomList.id)}
+                  accessibilityLabel="Delete list"
+                >
+                  <SnitchIcon name="delete" size={15} color={SnitchColors.error} />
+                </Pressable>
+              </View>
+            )}
           </View>
 
+          {/* ── Item list ── */}
           <ScrollView
             style={styles.scroll}
             contentContainerStyle={[
@@ -152,10 +350,35 @@ export default function WishlistScreen() {
               ))
             ) : (
               <View style={styles.noResults}>
-                <Text style={styles.noResultsTitle}>Nothing in stock right now</Text>
-                <Text style={styles.noResultsSubtitle}>
-                  Your saved out-of-stock pieces will stay in your wishlist.
-                </Text>
+                {activeCustomList ? (
+                  <>
+                    <SnitchIcon
+                      name="playlist_add"
+                      size={32}
+                      color={SnitchColors.textLight}
+                    />
+                    <Text style={styles.noResultsTitle}>
+                      This list is empty
+                    </Text>
+                    <Text style={styles.noResultsSubtitle}>
+                      Tap Edit to add items from your wishlist.
+                    </Text>
+                    <Pressable
+                      style={styles.addItemsButton}
+                      onPress={() => setAddToListTarget(activeCustomList)}
+                    >
+                      <SnitchIcon name="add" size={16} color={SnitchColors.onPrimary} />
+                      <Text style={styles.addItemsButtonText}>Add Items</Text>
+                    </Pressable>
+                  </>
+                ) : (
+                  <>
+                    <Text style={styles.noResultsTitle}>Nothing in stock right now</Text>
+                    <Text style={styles.noResultsSubtitle}>
+                      Your saved out-of-stock pieces will stay in your wishlist.
+                    </Text>
+                  </>
+                )}
               </View>
             )}
           </ScrollView>
@@ -170,17 +393,18 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: SnitchColors.canvas,
   },
+  // ─── Toolbar ───────────────────────────────────────────────────────
   toolbar: {
-    minHeight: 64,
-    paddingHorizontal: SnitchSpacing.gutter,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: SnitchSpacing.sm,
+    paddingTop: SnitchSpacing.sm,
+    paddingBottom: SnitchSpacing.sm,
+    gap: SnitchSpacing.xs,
+    borderBottomWidth: 1,
+    borderBottomColor: SnitchColors.border,
   },
-  filters: {
+  filtersRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    paddingHorizontal: SnitchSpacing.gutter,
     gap: SnitchSpacing.sm,
   },
   filterButton: {
@@ -203,13 +427,38 @@ const styles = StyleSheet.create({
     color: SnitchColors.onPrimary,
     fontWeight: '600',
   },
-  moveAllButton: {
+  customFilterChipWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  // "Create your list" chip
+  createListChip: {
     minHeight: 36,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SnitchSpacing.xs,
+    paddingHorizontal: SnitchSpacing.md,
+    borderRadius: SnitchRadius.full,
+    borderWidth: 1.5,
+    borderColor: SnitchColors.borderVariant,
+    borderStyle: 'dashed',
+    backgroundColor: 'transparent',
+  },
+  createListChipText: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: SnitchColors.textMuted,
+  },
+  // move all / list actions row
+  moveAllButton: {
+    alignSelf: 'flex-end',
+    marginRight: SnitchSpacing.gutter,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: SnitchSpacing.xs,
     paddingHorizontal: SnitchSpacing.md,
+    paddingVertical: SnitchSpacing.xs,
     borderRadius: SnitchRadius.full,
     backgroundColor: SnitchColors.surfaceContainerHigh,
   },
@@ -221,15 +470,42 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: SnitchColors.textPrimary,
   },
+  listActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    gap: SnitchSpacing.sm,
+    paddingHorizontal: SnitchSpacing.gutter,
+  },
+  listActionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SnitchSpacing.xs,
+    paddingHorizontal: SnitchSpacing.md,
+    paddingVertical: SnitchSpacing.xs,
+    borderRadius: SnitchRadius.full,
+    backgroundColor: SnitchColors.surfaceContainerHigh,
+  },
+  listActionDeleteButton: {
+    paddingHorizontal: SnitchSpacing.sm,
+    backgroundColor: 'rgba(186,26,26,0.07)',
+  },
+  listActionText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: SnitchColors.textPrimary,
+  },
+  // ─── Scroll ────────────────────────────────────────────────────────
   scroll: {
     flex: 1,
   },
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: SnitchSpacing.gutter,
-    paddingTop: SnitchSpacing.sm,
+    paddingTop: SnitchSpacing.md,
     gap: SnitchSpacing.md,
   },
+  // ─── Empty / no results ────────────────────────────────────────────
   emptyState: {
     flex: 1,
     alignItems: 'center',
@@ -278,6 +554,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: SnitchSpacing.xxl,
     paddingHorizontal: SnitchSpacing.xl,
+    gap: SnitchSpacing.sm,
   },
   noResultsTitle: {
     fontSize: 15,
@@ -286,10 +563,25 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   noResultsSubtitle: {
-    marginTop: SnitchSpacing.xs,
     fontSize: 13,
     lineHeight: 19,
     color: SnitchColors.textMuted,
     textAlign: 'center',
+  },
+  addItemsButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SnitchSpacing.xs,
+    marginTop: SnitchSpacing.sm,
+    paddingHorizontal: SnitchSpacing.xl,
+    height: 44,
+    borderRadius: SnitchRadius.full,
+    backgroundColor: SnitchColors.primary,
+  },
+  addItemsButtonText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: SnitchColors.onPrimary,
+    letterSpacing: 0.3,
   },
 });
