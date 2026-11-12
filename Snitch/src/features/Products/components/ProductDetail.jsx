@@ -1,18 +1,15 @@
 import React, { useState, useRef, useCallback, useEffect, useMemo, } from 'react';
-import { View, Text, ScrollView, Pressable, StyleSheet, Dimensions, FlatList } from 'react-native';
+import { View, Text, ScrollView, Pressable, StyleSheet, Dimensions, FlatList, Modal, useWindowDimensions } from 'react-native';
 
 import { Image } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
+import Animated, { runOnJS, useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
 
 import { SnitchIcon } from '@/components/snitch-icon';
-import {
-  SnitchColors,
-  SnitchSpacing,
-  SnitchRadius,
-} from '@/constants/snitch-theme';
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+import { SnitchColors } from '@/constants/snitch-theme';
+import { styles } from '@/features/Products/styles/productDetailStyles';
 
 // --------------------------------
 // Variant helpers
@@ -62,17 +59,18 @@ const getVariantId = (variant) => {
 // Component
 // --------------------------------
 
-export default function ProductDetailScreen({
-  product,
-  onAddToCart,
-  onBuyNow,
-  onToggleWishlist,
-  isWishlisted,
-}) {
+export default function ProductDetailScreen({ product, onAddToCart, onBuyNow, onToggleWishlist, isWishlisted }) {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { width: windowWidth, height: windowHeight } = useWindowDimensions();
 
   const flatListRef = useRef(null);
+  const zoomScale = useSharedValue(1);
+  const savedZoomScale = useSharedValue(1);
+  const translateX = useSharedValue(0);
+  const translateY = useSharedValue(0);
+  const panStartX = useSharedValue(0);
+  const panStartY = useSharedValue(0);
 
   const [activeSlide, setActiveSlide] = useState(0);
   const [selectedAttributes, setSelectedAttributes] = useState({});
@@ -161,6 +159,155 @@ export default function ProductDetailScreen({
 
   const totalImages = images.length || 1;
 
+  const [isFullScreen, setIsFullScreen] = useState(false);
+  const [isZoomed, setIsZoomed] = useState(false);
+  const resetZoom = useCallback(() => {
+    zoomScale.value = 1;
+    savedZoomScale.value = 1;
+    translateX.value = 0;
+    translateY.value = 0;
+    setIsZoomed(false);
+  }, [zoomScale, savedZoomScale, translateX, translateY]);
+
+  const savedScale = useSharedValue(1);
+
+  const pinchFocalX = useSharedValue(0);
+  const pinchFocalY = useSharedValue(0);
+
+  const savedTranslateX = useSharedValue(0);
+  const savedTranslateY = useSharedValue(0);
+
+  const changeViewerSlide = useCallback((direction) => {
+    setActiveSlide(
+      (current) => (current + direction + images.length) % images.length
+    );
+    resetZoom();
+  }, [images.length, resetZoom]);
+
+  const closeImageViewer = useCallback(() => {
+    setIsFullScreen(false);
+    resetZoom();
+  }, [resetZoom]);
+
+  const toggleZoom = useCallback(() => {
+    if (zoomScale.value > 1) {
+      resetZoom();
+    } else {
+      zoomScale.value = 2.5;
+      setIsZoomed(true);
+    }
+  }, [zoomScale, resetZoom]);
+
+  const pinchGesture = Gesture.Pinch()
+    .onStart((event) => {
+      savedScale.value = zoomScale.value;
+
+      savedTranslateX.value = translateX.value;
+      savedTranslateY.value = translateY.value;
+
+      // Focal point relative to the centre of the image stage
+      pinchFocalX.value = event.focalX - windowWidth / 2;
+      pinchFocalY.value = event.focalY - windowHeight / 2;
+    })
+    .onUpdate((event) => {
+      const newScale = Math.max(
+        1,
+        Math.min(savedScale.value * event.scale, 4)
+      );
+
+      zoomScale.value = newScale;
+
+      // Current finger midpoint relative to image centre
+      const currentFocalX = event.focalX - windowWidth / 2;
+      const currentFocalY = event.focalY - windowHeight / 2;
+
+      // Calculate the image point originally underneath the fingers
+      const imagePointX =
+        (pinchFocalX.value - savedTranslateX.value) /
+        savedScale.value;
+
+      const imagePointY =
+        (pinchFocalY.value - savedTranslateY.value) /
+        savedScale.value;
+
+      // Keep that image point underneath the moving fingers
+      const maxX = (windowWidth * (newScale - 1)) / 2;
+      const maxY = (windowHeight * (newScale - 1)) / 2;
+
+      translateX.value = Math.max(
+        -maxX,
+        Math.min(maxX, currentFocalX - imagePointX * newScale)
+      );
+
+      translateY.value = Math.max(
+        -maxY,
+        Math.min(maxY, currentFocalY - imagePointY * newScale)
+      );
+    })
+    .onEnd(() => {
+      if (zoomScale.value <= 1) {
+        zoomScale.value = 1;
+        translateX.value = 0;
+        translateY.value = 0;
+      }
+    });
+
+  const panGesture = Gesture.Pan()
+    .maxPointers(1)
+    .activeOffsetX([-20, 20])
+    .failOffsetY([-20, 20])
+    .onStart(() => {
+      panStartX.value = translateX.value;
+      panStartY.value = translateY.value;
+    })
+    .onUpdate((event) => {
+      if (zoomScale.value <= 1) return;
+
+      const maxX = (windowWidth * (zoomScale.value - 1)) / 2;
+      const maxY = (windowHeight * (zoomScale.value - 1)) / 2;
+
+      translateX.value = Math.max(
+        -maxX,
+        Math.min(maxX, panStartX.value + event.translationX)
+      );
+
+      translateY.value = Math.max(
+        -maxY,
+        Math.min(maxY, panStartY.value + event.translationY)
+      );
+    })
+    .onEnd((event) => {
+      // At normal zoom, horizontal swipe changes the image.
+      if (zoomScale.value <= 1 && images.length > 1) {
+        runOnJS(changeViewerSlide)(
+          event.translationX < 0 ? 1 : -1
+        );
+      }
+    });
+
+  const doubleTapGesture = Gesture.Tap()
+    .numberOfTaps(2)
+    .onEnd(() => {
+      if (zoomScale.value > 1) {
+        zoomScale.value = 1;
+        translateX.value = 0;
+        translateY.value = 0;
+        runOnJS(setIsZoomed)(false);
+      } else {
+        zoomScale.value = 2.5;
+        runOnJS(setIsZoomed)(true);
+      }
+    });
+
+  const imageGestures = Gesture.Simultaneous(pinchGesture, panGesture, doubleTapGesture);
+  const animatedZoomStyle = useAnimatedStyle(() => ({
+    transform: [
+      { translateX: translateX.value },
+      { translateY: translateY.value },
+      { scale: zoomScale.value },
+    ],
+  }));
+
   const canPurchase = hasVariants
     ? Boolean(selectedVariant && variantId && variantStock > 0)
     : true;
@@ -172,17 +319,23 @@ export default function ProductDetailScreen({
   useEffect(() => {
     setSelectedAttributes({});
     setActiveSlide(0);
-  }, [product?.id]);
+    closeImageViewer();
+  }, [product?.id, closeImageViewer]);
 
   // Reset carousel when selected variant changes.
   useEffect(() => {
     setActiveSlide(0);
+    resetZoom();
 
     flatListRef.current?.scrollToOffset({
       offset: 0,
       animated: true,
     });
-  }, [variantId]);
+  }, [variantId, resetZoom]);
+
+  useEffect(() => {
+    resetZoom();
+  }, [activeSlide, resetZoom]);
 
   // --------------------------------
   // Carousel
@@ -317,24 +470,32 @@ export default function ProductDetailScreen({
             keyExtractor={(_, i) => String(i)}
             onViewableItemsChanged={onViewableItemsChanged}
             viewabilityConfig={viewabilityConfig}
-            renderItem={({ item }) => (
-              <View style={styles.slide}>
-                {item ? (
-                  <Image
-                    source={{ uri: item }}
-                    style={styles.slideImage}
-                    contentFit="cover"
-                  />
-                ) : (
-                  <View
-                    style={[
-                      styles.slideImage,
-                      styles.imagePlaceholder,
-                    ]}
-                  />
-                )}
-              </View>
-            )}
+            renderItem={({ item }) => {
+              return (
+                <View style={styles.slide}>
+                  {item ? (
+                    <Pressable
+                      onPress={() => setIsFullScreen(true)}
+                      accessibilityRole="button"
+                      accessibilityLabel="Open product image"
+                    >
+                      <Image
+                        source={{ uri: item }}
+                        contentFit="cover"
+                        style={styles.slideImage}
+                      />
+                    </Pressable>
+                  ) : (
+                    <View
+                      style={[
+                        styles.slideImage,
+                        styles.imagePlaceholder,
+                      ]}
+                    />
+                  )}
+                </View>
+              );
+            }}
           />
 
           <View style={styles.slideCounterBadge}>
@@ -343,6 +504,87 @@ export default function ProductDetailScreen({
             </Text>
           </View>
         </View>
+
+        <Modal
+          visible={isFullScreen && Boolean(images[activeSlide])}
+          transparent
+          animationType="fade"
+          statusBarTranslucent
+          onRequestClose={closeImageViewer}
+        >
+          <GestureHandlerRootView style={styles.viewerRoot}>
+            <View style={styles.viewerRoot}>
+              <GestureDetector gesture={imageGestures}>
+                <View style={styles.viewerImageStage}>
+                  <Animated.View
+                    style={[
+                      styles.viewerImageFrame,
+                      { width: windowWidth, height: windowHeight },
+                      animatedZoomStyle,
+                    ]}
+                  >
+                    <Image
+                      source={{ uri: images[activeSlide] }}
+                      contentFit="contain"
+                      style={styles.viewerImage}
+                    />
+                  </Animated.View>
+                </View>
+              </GestureDetector>
+
+              <Pressable
+                style={[styles.viewerCloseButton, { top: insets.top + 12 }]}
+                onPress={closeImageViewer}
+                accessibilityRole="button"
+                accessibilityLabel="Close image viewer"
+              >
+                <Text style={styles.viewerControlText}>×</Text>
+              </Pressable>
+
+              <View style={[styles.viewerCounter, { top: insets.top + 22 }]}>
+                <Text style={styles.viewerCounterText}>
+                  {activeSlide + 1}/{totalImages}
+                </Text>
+              </View>
+
+              {images.length > 1 && (
+                <>
+                  <Pressable
+                    style={[styles.viewerNavButton, styles.viewerPreviousButton]}
+                    onPress={() =>
+                      goToSlide((activeSlide - 1 + images.length) % images.length)
+                    }
+                    accessibilityRole="button"
+                    accessibilityLabel="Previous image"
+                  >
+                    <Text style={styles.viewerControlText}>‹</Text>
+                  </Pressable>
+                  <Pressable
+                    style={[styles.viewerNavButton, styles.viewerNextButton]}
+                    onPress={() =>
+                      goToSlide((activeSlide + 1) % images.length)
+                    }
+                    accessibilityRole="button"
+                    accessibilityLabel="Next image"
+                  >
+                    <Text style={styles.viewerControlText}>›</Text>
+                  </Pressable>
+                </>
+              )}
+
+              <Pressable
+                style={[styles.viewerZoomButton, { bottom: insets.bottom + 18 }]}
+                onPress={toggleZoom}
+                accessibilityRole="button"
+                accessibilityLabel={isZoomed ? 'Reset zoom' : 'Zoom image'}
+              >
+                <Text style={styles.viewerZoomText}>
+                  {isZoomed ? 'RESET ZOOM' : 'PINCH OR DOUBLE-TAP TO ZOOM'}
+                </Text>
+              </Pressable>
+            </View>
+          </GestureHandlerRootView>
+        </Modal>
 
         {/* ── Thumbnail Strip ── */}
 
@@ -746,483 +988,3 @@ export default function ProductDetailScreen({
     </View>
   );
 }
-
-// --------------------------------
-// Styles
-// --------------------------------
-
-const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: SnitchColors.canvas,
-  },
-
-  // Header
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: SnitchSpacing.sm,
-    paddingVertical: SnitchSpacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: SnitchColors.border,
-    backgroundColor: SnitchColors.canvas,
-  },
-
-  headerBtn: {
-    width: 42,
-    height: 42,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: SnitchRadius.full,
-  },
-
-  headerRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-
-  scroll: {
-    flex: 1,
-  },
-
-  // Carousel
-  carouselContainer: {
-    position: 'relative',
-    backgroundColor: SnitchColors.surfaceContainerLow,
-  },
-
-  slide: {
-    width: SCREEN_WIDTH,
-    aspectRatio: 4 / 5,
-  },
-
-  slideImage: {
-    width: '100%',
-    height: '100%',
-  },
-
-  imagePlaceholder: {
-    backgroundColor: SnitchColors.surfaceContainerHigh,
-  },
-
-  slideCounterBadge: {
-    position: 'absolute',
-    top: SnitchSpacing.md,
-    right: SnitchSpacing.md,
-    backgroundColor: 'rgba(26,28,26,0.70)',
-    paddingHorizontal: SnitchSpacing.sm,
-    paddingVertical: 4,
-    borderRadius: SnitchRadius.full,
-  },
-
-  slideCounterText: {
-    color: '#FFFFFF',
-    fontSize: 11,
-    fontWeight: '600',
-    letterSpacing: 0.5,
-  },
-
-  // Thumbnails
-  thumbStrip: {
-    backgroundColor: SnitchColors.canvas,
-  },
-
-  thumbStripContent: {
-    paddingHorizontal: SnitchSpacing.gutter,
-    paddingVertical: SnitchSpacing.sm,
-    gap: SnitchSpacing.sm,
-    flexDirection: 'row',
-  },
-
-  thumb: {
-    width: 52,
-    height: 68,
-    borderRadius: SnitchRadius.sm,
-    overflow: 'hidden',
-    opacity: 0.5,
-    borderWidth: 1.5,
-    borderColor: 'transparent',
-  },
-
-  thumbActive: {
-    opacity: 1,
-    borderColor: SnitchColors.textPrimary,
-  },
-
-  thumbImage: {
-    width: '100%',
-    height: '100%',
-  },
-
-  // Info
-  infoSection: {
-    paddingHorizontal: SnitchSpacing.gutter,
-    paddingTop: SnitchSpacing.md,
-    paddingBottom: SnitchSpacing.sm,
-    gap: SnitchSpacing.xs,
-  },
-
-  metaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-
-  collectionLabel: {
-    fontSize: 10,
-    fontWeight: '700',
-    letterSpacing: 1.5,
-    color: SnitchColors.textMuted,
-    textTransform: 'uppercase',
-  },
-
-  ratingBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
-    backgroundColor: SnitchColors.surfaceContainerHigh,
-    paddingHorizontal: SnitchSpacing.sm,
-    paddingVertical: 3,
-    borderRadius: SnitchRadius.full,
-  },
-
-  ratingText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: SnitchColors.textPrimary,
-  },
-
-  reviewsText: {
-    fontSize: 11,
-    color: SnitchColors.textMuted,
-  },
-
-  productTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: SnitchColors.textPrimary,
-    letterSpacing: -0.3,
-    lineHeight: 26,
-    marginTop: SnitchSpacing.xs,
-  },
-
-  sellerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    marginTop: 2,
-  },
-
-  sellerText: {
-    fontSize: 12,
-    color: SnitchColors.textMuted,
-  },
-
-  dot: {
-    color: SnitchColors.borderVariant,
-    fontSize: 12,
-  },
-
-  shippingTag: {
-    fontSize: 12,
-    color: SnitchColors.secondary,
-    fontWeight: '500',
-  },
-
-  priceRow: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    gap: SnitchSpacing.sm,
-    marginTop: SnitchSpacing.sm,
-  },
-
-  currentPrice: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: SnitchColors.textPrimary,
-    letterSpacing: -0.5,
-  },
-
-  strikePrice: {
-    fontSize: 14,
-    color: SnitchColors.textLight,
-    textDecorationLine: 'line-through',
-  },
-
-  discountBadge: {
-    backgroundColor: SnitchColors.surfaceContainerHigh,
-    paddingHorizontal: SnitchSpacing.sm,
-    paddingVertical: 2,
-    borderRadius: SnitchRadius.full,
-  },
-
-  discountBadgeText: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: SnitchColors.discountBadge,
-    letterSpacing: 0.5,
-  },
-
-  taxNote: {
-    fontSize: 11,
-    color: SnitchColors.textLight,
-    marginTop: 2,
-  },
-
-  // Variant attributes
-  variantSection: {
-    paddingHorizontal: SnitchSpacing.gutter,
-    paddingVertical: SnitchSpacing.md,
-    borderTopWidth: 1,
-    borderTopColor: SnitchColors.border,
-    marginTop: SnitchSpacing.sm,
-    gap: SnitchSpacing.sm,
-  },
-
-  variantTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SnitchSpacing.sm,
-  },
-
-  variantLabel: {
-    fontSize: 12,
-    color: SnitchColors.textMuted,
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
-  },
-
-  variantSelected: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: SnitchColors.textPrimary,
-  },
-
-  variantPillsRow: {
-    flexDirection: 'row',
-    gap: SnitchSpacing.sm,
-  },
-
-  variantPill: {
-    height: 44,
-    minWidth: 52,
-    paddingHorizontal: SnitchSpacing.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: SnitchRadius.sm,
-    backgroundColor: SnitchColors.surfaceCard,
-    borderWidth: 1,
-    borderColor: SnitchColors.border,
-  },
-
-  variantPillSelected: {
-    backgroundColor: SnitchColors.textPrimary,
-    borderColor: SnitchColors.textPrimary,
-  },
-
-  variantPillText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: SnitchColors.textPrimary,
-  },
-
-  variantPillTextSelected: {
-    color: '#FFFFFF',
-  },
-
-  // Stock availability
-  variantStockCard: {
-    marginHorizontal: SnitchSpacing.gutter,
-    marginVertical: SnitchSpacing.sm,
-    padding: SnitchSpacing.md,
-    backgroundColor: SnitchColors.surfaceContainerLow,
-    borderRadius: SnitchRadius.md,
-    gap: SnitchSpacing.sm,
-  },
-
-  variantStockRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-
-  variantStockLabel: {
-    fontSize: 12,
-    color: SnitchColors.textMuted,
-    fontWeight: '500',
-  },
-
-  variantStockValue: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: SnitchColors.textPrimary,
-  },
-
-  variantOutOfStock: {
-    color: SnitchColors.error,
-  },
-
-  invalidVariantCard: {
-    marginHorizontal: SnitchSpacing.gutter,
-    marginVertical: SnitchSpacing.sm,
-    padding: SnitchSpacing.md,
-    backgroundColor: '#FCE8E8',
-    borderRadius: SnitchRadius.md,
-  },
-
-  invalidVariantText: {
-    fontSize: 12,
-    color: SnitchColors.error,
-    fontWeight: '600',
-  },
-
-  // Delivery
-  deliveryCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SnitchSpacing.md,
-    marginHorizontal: SnitchSpacing.gutter,
-    marginVertical: SnitchSpacing.sm,
-    padding: SnitchSpacing.md,
-    backgroundColor: SnitchColors.surfaceContainerLow,
-    borderRadius: SnitchRadius.md,
-  },
-
-  deliveryIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: SnitchRadius.full,
-    backgroundColor: SnitchColors.canvas,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-
-  deliveryInfo: {
-    flex: 1,
-  },
-
-  deliveryTitle: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: SnitchColors.textPrimary,
-  },
-
-  deliverySubtitle: {
-    fontSize: 12,
-    color: SnitchColors.secondary,
-    marginTop: 2,
-  },
-
-  // Accordions
-  accordionSection: {
-    marginHorizontal: SnitchSpacing.gutter,
-    marginBottom: SnitchSpacing.sm,
-    backgroundColor: SnitchColors.surfaceCard,
-    borderRadius: SnitchRadius.md,
-    borderWidth: 1,
-    borderColor: SnitchColors.border,
-    overflow: 'hidden',
-  },
-
-  accordionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: SnitchSpacing.gutter,
-    paddingVertical: SnitchSpacing.md,
-    minHeight: 52,
-  },
-
-  accordionLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SnitchSpacing.sm,
-  },
-
-  accordionTitle: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: SnitchColors.textPrimary,
-  },
-
-  accordionBody: {
-    paddingHorizontal: SnitchSpacing.gutter,
-    paddingBottom: SnitchSpacing.md,
-  },
-
-  accordionText: {
-    fontSize: 13,
-    color: SnitchColors.textSecondary,
-    lineHeight: 20,
-  },
-
-  // Bottom Bar
-  bottomBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SnitchSpacing.sm,
-    paddingHorizontal: SnitchSpacing.gutter,
-    paddingTop: SnitchSpacing.sm,
-    backgroundColor: SnitchColors.canvas,
-    borderTopWidth: 1,
-    borderTopColor: SnitchColors.border,
-  },
-
-  wishlistToggle: {
-    width: 46,
-    height: 46,
-    borderRadius: SnitchRadius.sm,
-    backgroundColor: SnitchColors.surfaceContainerLow,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-
-  addToBagBtn: {
-    flex: 1,
-    height: 46,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: SnitchSpacing.xs,
-    borderRadius: SnitchRadius.sm,
-    backgroundColor: SnitchColors.surfaceContainerHigh,
-    borderWidth: 1,
-    borderColor: SnitchColors.border,
-  },
-
-  addToBagText: {
-    fontSize: 12,
-    fontWeight: '700',
-    letterSpacing: 0.8,
-    color: SnitchColors.textPrimary,
-  },
-
-  buyNowBtn: {
-    flex: 1,
-    height: 46,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: SnitchSpacing.xs,
-    borderRadius: SnitchRadius.sm,
-    backgroundColor: SnitchColors.textPrimary,
-  },
-
-  buyNowText: {
-    fontSize: 12,
-    fontWeight: '700',
-    letterSpacing: 0.8,
-    color: '#FFFFFF',
-  },
-
-  buyNowPrice: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#FFFFFF',
-  },
-
-  disabledButton: {
-    opacity: 0.5,
-  },
-});
