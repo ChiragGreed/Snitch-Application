@@ -32,6 +32,7 @@ export default function HomeScreen() {
     getProductsHandler();
   }, [getProductsHandler]);
   const productsData = useSelector((state) => state.products.AllProducts);
+
   const status = useSelector((state) => state.products.status);
   const error = useSelector((state) => state.products.error);
   const loading = status === 'idle' || status === 'loading';

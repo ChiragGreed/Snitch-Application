@@ -65,13 +65,22 @@ const WishListItemCard = ({ product, onMoveToBag, inStock, onRemove, onPressProd
                         </Text>
                     </View>
                     <Pressable
-                        style={[styles.moveButton, !inStock && styles.moveButtonDisabled]}
-                        onPress={() => onMoveToBag(product)}
-                        disabled={!inStock}
-                        accessibilityLabel={`Move ${product?.title || 'product'} to bag`}
+                        style={[styles.moveButton]}
+                        onPress={inStock ? () => onMoveToBag(product) : undefined}
+                        accessibilityLabel={
+                            inStock
+                                ? `Move ${product?.title || 'product'} to bag`
+                                : `Notify me when ${product?.title || 'product'} is back in stock`
+                        }
                     >
-                        <SnitchIcon name="shopping_bag" size={16} color={SnitchColors.onPrimary} />
-                        <Text style={styles.moveButtonText}>Move to Bag</Text>
+                        <SnitchIcon
+                            name={inStock ? 'shopping_bag' : 'notifications'}
+                            size={16}
+                            color={SnitchColors.onPrimary}
+                        />
+                        <Text style={styles.moveButtonText}>
+                            {inStock ? 'Move to Bag' : 'Notify Me'}
+                        </Text>
                     </Pressable>
                 </View>
             </View>

@@ -542,7 +542,7 @@ export const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: SnitchSpacing.xs,
+        gap: SnitchSpacing.xs + 3,
         borderRadius: SnitchRadius.sm,
         backgroundColor: SnitchColors.textPrimary,
     },

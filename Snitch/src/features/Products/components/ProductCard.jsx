@@ -8,6 +8,7 @@ import { styles } from '@/features/Products/styles/productStyles';
 
 export default function ProductCard({ product, isWishlisted, onToggleWishlist, onAddToCart }) {
   const router = useRouter();
+  const isOutOfStock = product.variants?.length > 0 && product.variants.every((variant) => Number(variant?.stock ?? 0) <= 0);
 
   return (
     <Pressable style={styles.productCard} onPress={() => router.push(`/products/${product.id}`)}>
@@ -30,10 +31,19 @@ export default function ProductCard({ product, isWishlisted, onToggleWishlist, o
         </Pressable>
         <Pressable
           style={styles.quickAddButton}
-          onPress={(e) => { onAddToCart(product); }}
-          accessibilityLabel={`Add ${product.title} to bag`}
+          onPress={isOutOfStock ? undefined : () => onAddToCart(product)}
+          disabled={isOutOfStock}
+          accessibilityLabel={
+            isOutOfStock
+              ? `Notify me when ${product.title} is back in stock`
+              : `Add ${product.title} to bag`
+          }
         >
-          <SnitchIcon name="shopping_bag" size={17} color="#FFFFFF" />
+          <SnitchIcon
+            name={isOutOfStock ? 'notifications' : 'shopping_bag'}
+            size={17}
+            color="#FFFFFF"
+          />
         </Pressable>
       </View>
       <View style={styles.productInfo}>

@@ -968,22 +968,40 @@ export default function ProductDetailScreen({ product, onAddToCart, onBuyNow, on
           </Text>
         </Pressable>
 
-        <Pressable
-          style={[
-            styles.buyNowBtn,
-            !canPurchase && styles.disabledButton,
-          ]}
-          disabled={!canPurchase}
-          onPress={onBuyNow}
-        >
-          <Text style={styles.buyNowText}>
-            BUY NOW
-          </Text>
+        {selectedVariant && variantStock <= 0 ? (
+          <Pressable
+            style={styles.buyNowBtn}
+            disabled
+            accessibilityRole="button"
+            accessibilityLabel="Notify me"
+          >
+            <SnitchIcon
+              name="notifications"
+              size={18}
+              color="#FFFFFF"
+            />
+            <Text style={styles.buyNowText}>
+              NOTIFY ME
+            </Text>
+          </Pressable>
+        ) : (
+          <Pressable
+            style={[
+              styles.buyNowBtn,
+              !canPurchase && styles.disabledButton,
+            ]}
+            disabled={!canPurchase}
+            onPress={onBuyNow}
+          >
+            <Text style={styles.buyNowText}>
+              BUY NOW
+            </Text>
 
-          <Text style={styles.buyNowPrice}>
-            ₹{currentPrice.toLocaleString('en-IN')}
-          </Text>
-        </Pressable>
+            <Text style={styles.buyNowPrice}>
+              ₹{currentPrice.toLocaleString('en-IN')}
+            </Text>
+          </Pressable>
+        )}
       </View>
     </View>
   );
