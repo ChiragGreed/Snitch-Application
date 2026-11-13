@@ -105,13 +105,13 @@ export default function ProfileScreen() {
           <View style={styles.authActions}>
             <Pressable
               style={[styles.authButton, styles.loginButton]}
-              onPress={requestSignIn}
+              onPress={() => router.push('/auth/login')}
             >
               <Text style={[styles.authButtonText, styles.loginButtonText]}>LOG IN</Text>
             </Pressable>
             <Pressable
               style={[styles.authButton, styles.createAccountButton]}
-              onPress={requestSignIn}
+              onPress={() => router.push('/auth/register')}
             >
               <Text style={styles.authButtonText}>CREATE ACCOUNT</Text>
             </Pressable>
