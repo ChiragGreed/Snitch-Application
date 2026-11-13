@@ -11,7 +11,7 @@ import useProducts from '@/features/Products/hooks/useProducts';
 import useWishList from '@/features/Wishlist/hooks/useWishList';
 import useCart from '@/features/Cart/hooks/useCart';
 import SnitchHeader from '@/shared/components/SnitchHeader';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { getCategoriesApi } from '@/features/Products/services/productApi';
 import ProductCard from '@/features/Products/components/ProductCard';
 import Toast from '@/shared/components/Toast';
@@ -22,6 +22,16 @@ const SORT_OPTIONS = [
   'Price: High to Low',
 ];
 
+const PRICE_FILTERS = [
+  { label: 'Under ₹1,000', value: 'under-1000', max: 999 },
+  { label: '₹1,000–₹2,499', value: '1000-2499', min: 1000, max: 2499 },
+  { label: '₹2,500–₹4,999', value: '2500-4999', min: 2500, max: 4999 },
+  { label: '₹5,000+', value: '5000-plus', min: 5000 },
+];
+
+const NEW_ARRIVALS_DAYS = 30;
+const ALL_CATEGORY_ID = '__all__';
+
 const getId = (value) => {
   if (!value) return '';
   return String(typeof value === 'object' ? value._id || value.id : value);
@@ -29,6 +39,34 @@ const getId = (value) => {
 
 const formatName = (value = '') =>
   value.replace(/[-_]/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase());
+
+function FilterAccordion({ title, summary, expanded, onPress, children }) {
+  return (
+    <View style={styles.filterAccordion}>
+      <Pressable
+        style={styles.filterAccordionHeader}
+        onPress={onPress}
+        accessibilityRole="button"
+        accessibilityState={{ expanded }}
+      >
+        <View style={styles.filterAccordionHeading}>
+          <Text style={styles.filterPanelTitle}>{title}</Text>
+          {!expanded && summary ? (
+            <Text style={styles.filterAccordionSummary}>{summary}</Text>
+          ) : null}
+        </View>
+        <SnitchIcon
+          name={expanded ? 'expand_less' : 'expand_more'}
+          size={20}
+          color={SnitchColors.textSecondary}
+        />
+      </Pressable>
+      {expanded ? (
+        <View style={styles.filterAccordionContent}>{children}</View>
+      ) : null}
+    </View>
+  );
+}
 
 export default function ExploreScreen() {
   const insets = useSafeAreaInsets();
@@ -41,19 +79,35 @@ export default function ExploreScreen() {
   const productError = useSelector((state) => state.products.error);
 
   const router = useRouter();
+  const { search: searchParam } = useLocalSearchParams();
+  const searchParamValue = Array.isArray(searchParam)
+    ? searchParam[0] || ''
+    : typeof searchParam === 'string'
+      ? searchParam
+      : '';
   const [categories, setCategories] = useState([]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
   const [categoryError, setCategoryError] = useState(null);
 
-  const [selectedParentId, setSelectedParentId] = useState(null);
+  const [selectedParentId, setSelectedParentId] = useState(ALL_CATEGORY_ID);
   const [selectedChildId, setSelectedChildId] = useState(null);
 
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(searchParamValue);
   const searchInputRef = useRef(null);
   const [sortIndex, setSortIndex] = useState(0);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [expandedFilterSection, setExpandedFilterSection] = useState('sort');
+  const [selectedPriceRange, setSelectedPriceRange] = useState(null);
+  const [newArrivalsOnly, setNewArrivalsOnly] = useState(false);
   const [inStockOnly, setInStockOnly] = useState(false);
   const [toastMessage, setToastMessage] = useState(null);
   const [toastType, setToastType] = useState('default');
+
+  useEffect(() => {
+    setSearchQuery(searchParamValue);
+    setSelectedParentId(ALL_CATEGORY_ID);
+    setSelectedChildId(null);
+  }, [searchParamValue]);
 
   useEffect(() => {
     getProductsHandler();
@@ -67,7 +121,7 @@ export default function ExploreScreen() {
         setCategoriesLoading(true);
         setCategoryError(null);
 
-        const data = await getCategoriesApi();
+        const data = await getCategoriesApi(); 
 
         if (isMounted) {
           setCategories(Array.isArray(data) ? data : []);
@@ -142,13 +196,17 @@ export default function ExploreScreen() {
     [childCategories, selectedChildId]
   );
 
-  // Select the first available parent category when categories load.
+  // Keep the all-products selection while categories load.
   useEffect(() => {
     if (parentCategories.length === 0) {
-      setSelectedParentId(null);
-      setSelectedChildId(null);
+      if (selectedParentId !== ALL_CATEGORY_ID) {
+        setSelectedParentId(ALL_CATEGORY_ID);
+        setSelectedChildId(null);
+      }
       return;
     }
+
+    if (selectedParentId === ALL_CATEGORY_ID) return;
 
     if (!parentCategories.some((category) => getId(category) === selectedParentId)) {
       setSelectedParentId(getId(parentCategories[0]));
@@ -165,6 +223,7 @@ export default function ExploreScreen() {
   }, [parentCategories, selectedParentId, selectedChildId, childCategories]);
 
   const visibleCategoryIds = useMemo(() => {
+    if (selectedParentId === ALL_CATEGORY_ID) return [];
     if (!selectedParentId) return [];
 
     if (selectedChildId) {
@@ -182,6 +241,12 @@ export default function ExploreScreen() {
   }, [selectedParentId, selectedChildId, childCategories]);
 
   const filteredProducts = useMemo(() => {
+    const now = Date.now();
+    const newArrivalsCutoff = now - NEW_ARRIVALS_DAYS * 24 * 60 * 60 * 1000;
+    const priceFilter = PRICE_FILTERS.find(
+      (option) => option.value === selectedPriceRange
+    );
+
     let result = products.filter((product) => {
       const productCategoryIds = (product.category || []).map(getId);
 
@@ -203,7 +268,27 @@ export default function ExploreScreen() {
 
       const matchesStock = !inStockOnly || hasStock;
 
-      return matchesCategory && matchesSearch && matchesStock;
+      const price = Number(product.price);
+      const matchesPrice =
+        !priceFilter ||
+        (Number.isFinite(price) &&
+          (priceFilter.min === undefined || price >= priceFilter.min) &&
+          (priceFilter.max === undefined || price <= priceFilter.max));
+
+      const createdAt = new Date(product.createdAt).getTime();
+      const matchesNewArrivals =
+        !newArrivalsOnly ||
+        (Number.isFinite(createdAt) &&
+          createdAt >= newArrivalsCutoff &&
+          createdAt <= now);
+
+      return (
+        matchesCategory &&
+        matchesSearch &&
+        matchesStock &&
+        matchesPrice &&
+        matchesNewArrivals
+      );
     });
 
     if (sortIndex === 1) {
@@ -213,13 +298,41 @@ export default function ExploreScreen() {
     }
 
     return result;
-  }, [products, visibleCategoryIds, searchQuery, inStockOnly, sortIndex]);
+  }, [
+    products,
+    visibleCategoryIds,
+    searchQuery,
+    inStockOnly,
+    sortIndex,
+    selectedPriceRange,
+    newArrivalsOnly,
+  ]);
 
-  const pageTitle = selectedChild
-    ? formatName(selectedChild.name)
-    : selectedParent
-      ? formatName(selectedParent.name)
-      : 'Explore';
+  const activeFilterCount =
+    (sortIndex !== 0 ? 1 : 0) +
+    (selectedPriceRange ? 1 : 0) +
+    (newArrivalsOnly ? 1 : 0) +
+    (inStockOnly ? 1 : 0);
+
+  const clearFilters = () => {
+    setSortIndex(0);
+    setSelectedPriceRange(null);
+    setNewArrivalsOnly(false);
+    setInStockOnly(false);
+  };
+
+  const toggleFilterSection = (section) => {
+    setExpandedFilterSection((current) => (current === section ? null : section));
+  };
+
+  const pageTitle =
+    selectedParentId === ALL_CATEGORY_ID
+      ? 'All Products'
+      : selectedChild
+        ? formatName(selectedChild.name)
+        : selectedParent
+          ? formatName(selectedParent.name)
+          : 'Explore';
 
   const triggerToast = (message, type = 'default') => {
     setToastMessage(message);
@@ -300,6 +413,26 @@ export default function ExploreScreen() {
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.parentTabs}
         >
+          <Pressable
+            onPress={() => {
+              setSelectedParentId(ALL_CATEGORY_ID);
+              setSelectedChildId(null);
+            }}
+            style={[
+              styles.parentTab,
+              selectedParentId === ALL_CATEGORY_ID && styles.parentTabActive,
+            ]}
+          >
+            <Text
+              style={[
+                styles.parentTabText,
+                selectedParentId === ALL_CATEGORY_ID && styles.parentTabTextActive,
+              ]}
+            >
+              All
+            </Text>
+          </Pressable>
+
           {parentCategories.map((category) => {
             const id = getId(category);
             const active = selectedParentId === id;
@@ -395,33 +528,166 @@ export default function ExploreScreen() {
         {/* Sorting and filters */}
         <View style={styles.filterRow}>
           <Pressable
-            style={styles.sortButton}
-            onPress={() =>
-              setSortIndex((current) => (current + 1) % SORT_OPTIONS.length)
-            }
+            style={styles.filterButton}
+            onPress={() => {
+              if (!filtersOpen) setExpandedFilterSection('sort');
+              setFiltersOpen(!filtersOpen);
+            }}
+            accessibilityRole="button"
+            accessibilityState={{ expanded: filtersOpen }}
           >
             <SnitchIcon name="tune" size={17} color="#FFFFFF" />
-            <Text style={styles.sortButtonText}>
-              Sort: {SORT_OPTIONS[sortIndex]}
+            <Text style={styles.filterButtonText}>
+              Filter & Sort{activeFilterCount ? ` (${activeFilterCount})` : ''}
             </Text>
-            <SnitchIcon name="expand_more" size={18} color="#FFFFFF" />
+            <SnitchIcon
+              name={filtersOpen ? 'expand_less' : 'expand_more'}
+              size={18}
+              color="#FFFFFF"
+            />
           </Pressable>
         </View>
 
-        <View style={styles.stockRow}>
-          <View style={styles.stockToggle}>
-            <Switch
-              value={inStockOnly}
-              onValueChange={setInStockOnly}
-              trackColor={{
-                false: SnitchColors.borderVariant,
-                true: SnitchColors.textPrimary,
-              }}
-              thumbColor="#FFFFFF"
-            />
-            <Text style={styles.stockText}>In-Stock Only</Text>
-          </View>
+        {filtersOpen ? (
+          <View style={styles.filterPanel}>
+            <View style={styles.filterPanelHeader}>
+              <Text style={styles.filterPanelTitle}>Filters</Text>
+              <Pressable onPress={clearFilters} accessibilityRole="button">
+                <Text style={styles.clearFiltersText}>Clear all</Text>
+              </Pressable>
+            </View>
 
+            <FilterAccordion
+              title="Sort by"
+              summary={SORT_OPTIONS[sortIndex]}
+              expanded={expandedFilterSection === 'sort'}
+              onPress={() => toggleFilterSection('sort')}
+            >
+              <View style={styles.filterChoices}>
+                {SORT_OPTIONS.map((option, index) => {
+                  const selected = sortIndex === index;
+
+                  return (
+                    <Pressable
+                      key={option}
+                      style={[
+                        styles.sortChoice,
+                        selected && styles.sortChoiceSelected,
+                      ]}
+                      onPress={() => setSortIndex(index)}
+                      accessibilityRole="radio"
+                      accessibilityState={{ selected }}
+                    >
+                      <Text
+                        style={[
+                          styles.sortChoiceText,
+                          selected && styles.sortChoiceTextSelected,
+                        ]}
+                      >
+                        {option}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </FilterAccordion>
+
+            <FilterAccordion
+              title="Price"
+              summary={
+                PRICE_FILTERS.find(
+                  (option) => option.value === selectedPriceRange
+                )?.label || 'Any price'
+              }
+              expanded={expandedFilterSection === 'price'}
+              onPress={() => toggleFilterSection('price')}
+            >
+              <View style={styles.filterChoices}>
+                {PRICE_FILTERS.map((option) => {
+                  const selected = selectedPriceRange === option.value;
+
+                  return (
+                    <Pressable
+                      key={option.value}
+                      style={[
+                        styles.priceChoice,
+                        selected && styles.priceChoiceSelected,
+                      ]}
+                      onPress={() =>
+                        setSelectedPriceRange(selected ? null : option.value)
+                      }
+                      accessibilityRole="checkbox"
+                      accessibilityState={{ checked: selected }}
+                    >
+                      <Text
+                        style={[
+                          styles.priceChoiceText,
+                          selected && styles.priceChoiceTextSelected,
+                        ]}
+                      >
+                        {option.label}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </FilterAccordion>
+
+            <FilterAccordion
+              title="New Arrivals"
+              summary={newArrivalsOnly ? 'On' : 'Off'}
+              expanded={expandedFilterSection === 'arrivals'}
+              onPress={() => toggleFilterSection('arrivals')}
+            >
+              <View style={styles.filterSwitchRow}>
+                <View style={styles.filterSwitchCopy}>
+                  <Text style={styles.filterSwitchTitle}>New Arrivals</Text>
+                  <Text style={styles.filterSwitchDescription}>
+                    Added in the last {NEW_ARRIVALS_DAYS} days
+                  </Text>
+                </View>
+                <Switch
+                  value={newArrivalsOnly}
+                  onValueChange={setNewArrivalsOnly}
+                  trackColor={{
+                    false: SnitchColors.borderVariant,
+                    true: SnitchColors.textPrimary,
+                  }}
+                  thumbColor="#FFFFFF"
+                  accessibilityLabel="New arrivals only"
+                />
+              </View>
+            </FilterAccordion>
+
+            <FilterAccordion
+              title="Availability"
+              summary={inStockOnly ? 'In stock only' : 'All products'}
+              expanded={expandedFilterSection === 'availability'}
+              onPress={() => toggleFilterSection('availability')}
+            >
+              <View style={styles.filterSwitchRow}>
+                <View style={styles.filterSwitchCopy}>
+                  <Text style={styles.filterSwitchTitle}>In-Stock Only</Text>
+                  <Text style={styles.filterSwitchDescription}>
+                    Show available items
+                  </Text>
+                </View>
+                <Switch
+                  value={inStockOnly}
+                  onValueChange={setInStockOnly}
+                  trackColor={{
+                    false: SnitchColors.borderVariant,
+                    true: SnitchColors.textPrimary,
+                  }}
+                  thumbColor="#FFFFFF"
+                  accessibilityLabel="In-stock products only"
+                />
+              </View>
+            </FilterAccordion>
+          </View>
+        ) : null}
+
+        <View style={styles.stockRow}>
           <Text style={styles.resultCount}>
             SHOWING {filteredProducts.length}
           </Text>
@@ -613,7 +879,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: SnitchSpacing.gutter,
     paddingBottom: 12,
   },
-  sortButton: {
+  filterButton: {
     alignSelf: 'flex-start',
     flexDirection: 'row',
     alignItems: 'center',
@@ -623,10 +889,123 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     paddingVertical: 11,
   },
-  sortButtonText: {
+  filterButtonText: {
     fontSize: 12,
     fontWeight: '600',
     color: '#FFFFFF',
+  },
+  filterPanel: {
+    marginHorizontal: SnitchSpacing.gutter,
+    marginBottom: 12,
+    padding: SnitchSpacing.gutter,
+    gap: 0,
+    borderRadius: SnitchRadius.lg,
+    backgroundColor: SnitchColors.surfaceCard,
+    borderWidth: 1,
+    borderColor: SnitchColors.border,
+  },
+  filterPanelHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingBottom: SnitchSpacing.sm,
+  },
+  filterPanelTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: SnitchColors.textPrimary,
+  },
+  filterAccordion: {
+    borderTopWidth: 1,
+    borderTopColor: SnitchColors.border,
+  },
+  filterAccordionHeader: {
+    minHeight: 48,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: SnitchSpacing.sm,
+  },
+  filterAccordionHeading: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: SnitchSpacing.sm,
+  },
+  filterAccordionSummary: {
+    flexShrink: 1,
+    fontSize: 11,
+    color: SnitchColors.textMuted,
+    textAlign: 'right',
+  },
+  filterAccordionContent: {
+    paddingBottom: SnitchSpacing.md,
+  },
+  clearFiltersText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: SnitchColors.secondaryMuted,
+  },
+  filterChoices: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: SnitchSpacing.sm,
+  },
+  sortChoice: {
+    paddingHorizontal: SnitchSpacing.md,
+    paddingVertical: SnitchSpacing.sm,
+    borderRadius: SnitchRadius.full,
+    borderWidth: 1,
+    borderColor: SnitchColors.border,
+    backgroundColor: SnitchColors.canvas,
+  },
+  sortChoiceSelected: {
+    borderColor: SnitchColors.textPrimary,
+    backgroundColor: SnitchColors.textPrimary,
+  },
+  sortChoiceText: {
+    fontSize: 12,
+    color: SnitchColors.textSecondary,
+  },
+  sortChoiceTextSelected: {
+    color: '#FFFFFF',
+  },
+  priceChoice: {
+    paddingHorizontal: SnitchSpacing.md,
+    paddingVertical: SnitchSpacing.sm,
+    borderRadius: SnitchRadius.full,
+    borderWidth: 1,
+    borderColor: SnitchColors.border,
+    backgroundColor: SnitchColors.canvas,
+  },
+  priceChoiceSelected: {
+    borderColor: SnitchColors.textPrimary,
+    backgroundColor: SnitchColors.textPrimary,
+  },
+  priceChoiceText: {
+    fontSize: 12,
+    color: SnitchColors.textSecondary,
+  },
+  priceChoiceTextSelected: {
+    color: '#FFFFFF',
+  },
+  filterSwitchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  filterSwitchCopy: {
+    gap: SnitchSpacing.xs,
+  },
+  filterSwitchTitle: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: SnitchColors.textPrimary,
+  },
+  filterSwitchDescription: {
+    fontSize: 11,
+    color: SnitchColors.textMuted,
   },
 
   stockRow: {
@@ -634,16 +1013,7 @@ const styles = StyleSheet.create({
     paddingBottom: 15,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  stockToggle: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-  },
-  stockText: {
-    fontSize: 12,
-    color: SnitchColors.textSecondary,
+    justifyContent: 'flex-end',
   },
   resultCount: {
     fontSize: 10,

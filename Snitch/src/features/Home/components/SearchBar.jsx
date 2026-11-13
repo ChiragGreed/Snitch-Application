@@ -8,12 +8,19 @@ import { styles } from '@/features/Home/styles/homeStyles';
  * SearchBar
  *
  * Props:
- *  value        — controlled text value
- *  onChangeText — text change handler
- *  onSort       — called when the filter/sort button is tapped
- *  onToast      — optional toast callback
+ *  value            — controlled text value
+ *  onChangeText     — text change handler
+ *  onSubmitEditing  — called when the search is submitted
+ *  onSort           — toggles the sort menu
+ *  sortMenuOpen     — indicates whether the sort menu is expanded
  */
-export default function SearchBar({ value, onChangeText, onSort, onToast }) {
+export default function SearchBar({
+  value,
+  onChangeText,
+  onSubmitEditing,
+  onSort,
+  sortMenuOpen,
+}) {
   return (
     <View style={styles.searchRow}>
       <View style={styles.searchContainer}>
@@ -24,6 +31,7 @@ export default function SearchBar({ value, onChangeText, onSort, onToast }) {
           placeholderTextColor={SnitchColors.textLight}
           value={value}
           onChangeText={onChangeText}
+          onSubmitEditing={onSubmitEditing}
           returnKeyType="search"
           clearButtonMode="while-editing"
         />
@@ -32,7 +40,8 @@ export default function SearchBar({ value, onChangeText, onSort, onToast }) {
       <Pressable
         style={styles.searchFilterButton}
         onPress={onSort}
-        accessibilityLabel="Sort and filter"
+        accessibilityLabel="Sort products"
+        accessibilityState={{ expanded: sortMenuOpen }}
       >
         <SnitchIcon name="tune" size={18} color={SnitchColors.textPrimary} />
       </Pressable>

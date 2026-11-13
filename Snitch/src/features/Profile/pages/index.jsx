@@ -20,21 +20,6 @@ function SectionHeading({ title, trailing }) {
   );
 }
 
-function ShoppingShortcut({ icon, title, caption, onPress }) {
-  return (
-    <Pressable style={styles.shortcutCard} onPress={onPress}>
-      <View style={styles.shortcutTop}>
-        <View style={styles.shortcutIcon}>
-          <SnitchIcon name={icon} size={20} color={SnitchColors.textPrimary} />
-        </View>
-        <SnitchIcon name="chevron_right" size={18} color={SnitchColors.borderVariant} />
-      </View>
-      <Text style={styles.shortcutTitle}>{title}</Text>
-      <Text style={styles.shortcutCaption}>{caption}</Text>
-    </Pressable>
-  );
-}
-
 function ProfileRow({ icon, title, description, onPress, requiresSignIn = false }) {
   return (
     <Pressable style={styles.accountRow} onPress={onPress}>
@@ -105,36 +90,48 @@ export default function ProfileScreen() {
         ]}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.welcomeCard}>
-          <View style={styles.welcomeIcon}>
-            <SnitchIcon name="person" size={30} color={SnitchColors.secondaryMuted} />
+        <View style={styles.welcomeSection}>
+          <View style={styles.welcomeHeader}>
+            <View style={styles.welcomeAvatar}>
+              <SnitchIcon name="person" size={26} color={SnitchColors.textSecondary} />
+            </View>
+            <View style={styles.welcomeCopy}>
+              <Text style={styles.welcomeTitle}>Welcome to Snitch</Text>
+              <Text style={styles.welcomeDescription}>
+                Sign in or create an account to get started.
+              </Text>
+            </View>
           </View>
-          <Text style={styles.welcomeTitle}>Welcome to Snitch</Text>
-          <Text style={styles.welcomeDescription}>
-            Sign in for a personalized experience, curated looks, and seamless checkout.
-          </Text>
-          <Pressable style={styles.signInButton} onPress={requestSignIn}>
-            <Text style={styles.signInButtonText}>LOGIN / CREATE ACCOUNT</Text>
-            <SnitchIcon name="arrow_forward" size={18} color={SnitchColors.onPrimary} />
-          </Pressable>
-          <Text style={styles.benefitsText}>
-            FAST CHECKOUT  ·  ORDER TRACKING  ·  SAVED WISHLIST
-          </Text>
+          <View style={styles.authActions}>
+            <Pressable
+              style={[styles.authButton, styles.loginButton]}
+              onPress={requestSignIn}
+            >
+              <Text style={[styles.authButtonText, styles.loginButtonText]}>LOG IN</Text>
+            </Pressable>
+            <Pressable
+              style={[styles.authButton, styles.createAccountButton]}
+              onPress={requestSignIn}
+            >
+              <Text style={styles.authButtonText}>CREATE ACCOUNT</Text>
+            </Pressable>
+          </View>
         </View>
 
         <View style={styles.section}>
           <SectionHeading title="YOUR SHOPPING" trailing="Sync enabled on sign in" />
-          <View style={styles.shortcutRow}>
-            <ShoppingShortcut
+          <View style={styles.rowsCard}>
+            <ProfileRow
               icon="shopping_bag"
               title="My Bag"
-              caption={`${bagCount} ${bagCount === 1 ? 'item' : 'items'} in bag`}
+              description={`${bagCount} ${bagCount === 1 ? 'item' : 'items'} in bag`}
               onPress={() => router.push('/cart')}
             />
-            <ShoppingShortcut
+            <View style={styles.rowDivider} />
+            <ProfileRow
               icon="favorite"
               title="Wishlist"
-              caption={`${wishListItems.length} saved ${wishListItems.length === 1 ? 'piece' : 'pieces'}`}
+              description={`${wishListItems.length} saved ${wishListItems.length === 1 ? 'piece' : 'pieces'}`}
               onPress={() => router.push('/wishlist')}
             />
           </View>
@@ -221,62 +218,68 @@ const styles = StyleSheet.create({
     paddingTop: SnitchSpacing.sm,
     gap: SnitchSpacing.xl,
   },
-  welcomeCard: {
-    alignItems: 'center',
-    paddingHorizontal: SnitchSpacing.lg,
-    paddingTop: SnitchSpacing.xl,
-    paddingBottom: SnitchSpacing.xl,
-    borderRadius: SnitchRadius.xl,
+  welcomeSection: {
+    padding: SnitchSpacing.gutter,
+    gap: SnitchSpacing.sm,
+    borderRadius: SnitchRadius.lg,
     backgroundColor: SnitchColors.surfaceCard,
   },
-  welcomeIcon: {
-    width: 72,
-    height: 72,
-    borderRadius: SnitchRadius.full,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: SnitchColors.surfaceContainerLow,
-    marginBottom: SnitchSpacing.lg,
-  },
-  welcomeTitle: {
-    fontSize: 24,
-    fontWeight: '500',
-    letterSpacing: -0.5,
-    color: SnitchColors.textPrimary,
-    textAlign: 'center',
-  },
-  welcomeDescription: {
-    maxWidth: 340,
-    marginTop: SnitchSpacing.sm,
-    fontSize: 14,
-    lineHeight: 22,
-    color: SnitchColors.textSecondary,
-    textAlign: 'center',
-  },
-  signInButton: {
-    width: '100%',
-    minHeight: 52,
-    marginTop: SnitchSpacing.xl,
-    paddingHorizontal: SnitchSpacing.lg,
-    borderRadius: SnitchRadius.md,
-    backgroundColor: SnitchColors.primary,
+  welcomeHeader: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: SnitchSpacing.md,
+  },
+  welcomeAvatar: {
+    width: 48,
+    height: 48,
+    alignItems: 'center',
     justifyContent: 'center',
-    gap: SnitchSpacing.sm,
+    borderRadius: SnitchRadius.full,
+    backgroundColor: SnitchColors.surfaceContainerLow,
   },
-  signInButtonText: {
-    fontSize: 14,
+  welcomeCopy: {
+    flex: 1,
+    gap: SnitchSpacing.xs,
+  },
+  welcomeTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: SnitchColors.textPrimary,
+  },
+  welcomeDescription: {
+    fontSize: 12,
+    lineHeight: 17,
+    color: SnitchColors.textSecondary,
+  },
+  authActions: {
+    flexDirection: 'row',
+    gap: SnitchSpacing.md,
+    marginTop: SnitchSpacing.xs,
+  },
+  authButton: {
+    flex: 1,
+    minHeight: 40,
+    paddingHorizontal: SnitchSpacing.md,
+    borderRadius: SnitchRadius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loginButton: {
+    backgroundColor: SnitchColors.primary,
+  },
+  createAccountButton: {
+    borderWidth: 1,
+    borderColor: SnitchColors.primary,
+    backgroundColor: 'transparent',
+  },
+  authButtonText: {
+    fontSize: 12,
     fontWeight: '700',
-    letterSpacing: 0.6,
-    color: SnitchColors.onPrimary,
+    letterSpacing: 0.4,
+    color: SnitchColors.textPrimary,
   },
-  benefitsText: {
-    marginTop: SnitchSpacing.xl,
-    fontSize: 10,
-    letterSpacing: 0.3,
-    color: SnitchColors.textMuted,
-    textAlign: 'center',
+  loginButtonText: {
+    color: SnitchColors.onPrimary,
   },
   section: {
     gap: SnitchSpacing.md,
@@ -297,42 +300,6 @@ const styles = StyleSheet.create({
   },
   sectionTrailing: {
     fontSize: 11,
-    color: SnitchColors.secondaryMuted,
-  },
-  shortcutRow: {
-    flexDirection: 'row',
-    gap: SnitchSpacing.md,
-  },
-  shortcutCard: {
-    flex: 1,
-    minHeight: 138,
-    justifyContent: 'space-between',
-    padding: SnitchSpacing.gutter,
-    borderRadius: SnitchRadius.lg,
-    backgroundColor: SnitchColors.surfaceCard,
-  },
-  shortcutTop: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  shortcutIcon: {
-    width: 40,
-    height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: SnitchRadius.sm,
-    backgroundColor: SnitchColors.surfaceContainerLow,
-  },
-  shortcutTitle: {
-    marginTop: SnitchSpacing.md,
-    fontSize: 18,
-    fontWeight: '500',
-    color: SnitchColors.textPrimary,
-  },
-  shortcutCaption: {
-    marginTop: SnitchSpacing.xs,
-    fontSize: 12,
     color: SnitchColors.secondaryMuted,
   },
   rowsCard: {

@@ -16,6 +16,7 @@ export const adaptProduct = (product) => {
     counter: `1/${imageUrls.length || 1}`,
     swatches: [],
     extraSwatchesCount: 0,
+    createdAt: product.createdAt || product.created_at || null,
     category: product.category || [],
     variants: product.variants || []
   });

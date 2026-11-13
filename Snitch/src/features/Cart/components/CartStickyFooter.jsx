@@ -19,7 +19,7 @@ export default function CartStickyFooter({
     <View
       style={[
         styles.stickyCheckoutBar,
-        { paddingBottom: Math.max(insets.bottom, 12) },
+        { paddingBottom: 7 },
       ]}
     >
       <View style={styles.stickyBarContent}>

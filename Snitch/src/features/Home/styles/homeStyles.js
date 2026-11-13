@@ -50,6 +50,45 @@ export const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: SnitchColors.border,
   },
+  homeSortPanel: {
+    marginHorizontal: SnitchSpacing.gutter,
+    marginBottom: SnitchSpacing.sm,
+    padding: SnitchSpacing.md,
+    gap: SnitchSpacing.sm,
+    borderRadius: SnitchRadius.lg,
+    backgroundColor: SnitchColors.surfaceCard,
+    borderWidth: 1,
+    borderColor: SnitchColors.border,
+  },
+  homeSortTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: SnitchColors.textPrimary,
+  },
+  homeSortOptions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: SnitchSpacing.sm,
+  },
+  homeSortOption: {
+    paddingHorizontal: SnitchSpacing.md,
+    paddingVertical: SnitchSpacing.sm,
+    borderRadius: SnitchRadius.full,
+    borderWidth: 1,
+    borderColor: SnitchColors.border,
+    backgroundColor: SnitchColors.canvas,
+  },
+  homeSortOptionSelected: {
+    borderColor: SnitchColors.textPrimary,
+    backgroundColor: SnitchColors.textPrimary,
+  },
+  homeSortOptionText: {
+    fontSize: 12,
+    color: SnitchColors.textSecondary,
+  },
+  homeSortOptionTextSelected: {
+    color: SnitchColors.onPrimary,
+  },
 
   // ─── Hero Banner ────────────────────────────────────────────────────────────
   heroCard: {

@@ -1,6 +1,7 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { View, ScrollView, ActivityIndicator, Text } from 'react-native';
+import { View, ScrollView, ActivityIndicator, Text, Pressable } from 'react-native';
+import { useRouter } from 'expo-router';
 import { useSelector } from 'react-redux';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -23,6 +24,7 @@ import { styles } from '@/features/Home/styles/homeStyles';
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
+  const router = useRouter();
 
   const { getProductsHandler } = useProducts();
   const { addToCartHandler } = useCart();
@@ -41,6 +43,7 @@ export default function HomeScreen() {
   const [selectedCategory, setSelectedCategory] = useState('ALL PIECES');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortIndex, setSortIndex] = useState(0);
+  const [sortMenuOpen, setSortMenuOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState(null);
   const [toastType, setToastType] = useState('default');
 
@@ -69,9 +72,11 @@ export default function HomeScreen() {
     triggerToast('Added to bag', 'success');
   };
 
-  // Sorting
-  const handleNextSort = () => {
-    setSortIndex((index) => (index + 1) % SORT_OPTIONS.length);
+  const handleSearchSubmit = () => {
+    const query = searchQuery.trim();
+    if (!query) return;
+
+    router.push({ pathname: '/explore', params: { search: query } });
   };
 
   // Product filtering and sorting
@@ -85,14 +90,7 @@ export default function HomeScreen() {
             category.toLowerCase() === selectedCategory.toLowerCase()
         );
 
-      const query = searchQuery.trim().toLowerCase();
-
-      const matchesSearch =
-        !query ||
-        product.title.toLowerCase().includes(query) ||
-        product.subtitle.toLowerCase().includes(query);
-
-      return matchesCategory && matchesSearch;
+      return matchesCategory;
     });
 
     const currentSort = SORT_OPTIONS[sortIndex];
@@ -108,7 +106,7 @@ export default function HomeScreen() {
     }
 
     return products;
-  }, [productsData, selectedCategory, searchQuery, sortIndex]);
+  }, [productsData, selectedCategory, sortIndex]);
 
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
@@ -127,9 +125,43 @@ export default function HomeScreen() {
         <SearchBar
           value={searchQuery}
           onChangeText={setSearchQuery}
-          onToast={triggerToast}
-          onSort={handleNextSort}
+          onSubmitEditing={handleSearchSubmit}
+          sortMenuOpen={sortMenuOpen}
+          onSort={() => setSortMenuOpen((open) => !open)}
         />
+
+        {sortMenuOpen ? (
+          <View style={styles.homeSortPanel}>
+            <Text style={styles.homeSortTitle}>Sort by</Text>
+            <View style={styles.homeSortOptions}>
+              {SORT_OPTIONS.map((option, index) => {
+                const selected = sortIndex === index;
+
+                return (
+                  <Pressable
+                    key={option}
+                    style={[
+                      styles.homeSortOption,
+                      selected && styles.homeSortOptionSelected,
+                    ]}
+                    onPress={() => setSortIndex(index)}
+                    accessibilityRole="radio"
+                    accessibilityState={{ selected }}
+                  >
+                    <Text
+                      style={[
+                        styles.homeSortOptionText,
+                        selected && styles.homeSortOptionTextSelected,
+                      ]}
+                    >
+                      {option}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
+        ) : null}
 
         <HeroBanner onToast={triggerToast} />
 
@@ -159,9 +191,6 @@ export default function HomeScreen() {
             wishlist={wishListItems}
             onToggleWishlist={toggleWishlist}
             onAddToCart={handleAddToCart}
-            sortOptions={SORT_OPTIONS}
-            sortIndex={sortIndex}
-            onNextSort={handleNextSort}
           />
         )}
 
