@@ -6,6 +6,7 @@ import { Svg, Path } from 'react-native-svg';
 import { SnitchColors, SnitchRadius, SnitchSpacing } from '@/constants/snitch-theme';
 import { authHeroTextShadows, authSharedStyles } from '@/features/Authentication/styles/authStyles';
 import { useRouter } from 'expo-router';
+import useAuth from '@/features/Authentication/hooks/useAuth.js';
 
 const HERO_IMAGE = 'https://ik.imagekit.io/lfqmv9rcq/h-ng-nguy-n-HhQFk_5vbxE-unsplash.jpg';
 const GoogleIcon = ({ size = 18 }) => (
@@ -23,6 +24,12 @@ export default function LoginScreen() {
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [rememberMe, setRememberMe] = useState(false);
+
+    const { loginHandler } = useAuth();
+
+    async function login() {
+        await loginHandler({ email, password });
+    }
 
     const route = useRouter();
 
@@ -151,7 +158,7 @@ export default function LoginScreen() {
                         </View>
 
                         {/* Login CTA */}
-                        <Pressable style={styles.ctaButton} accessibilityRole="button">
+                        <Pressable style={styles.ctaButton} onPress={login} accessibilityRole="button">
                             <Text style={styles.ctaButtonText}>LOGIN</Text>
                         </Pressable>
                     </View>

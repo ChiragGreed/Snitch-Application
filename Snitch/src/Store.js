@@ -1,4 +1,5 @@
 import { configureStore } from '@reduxjs/toolkit';
+import authReducer from './features/Authentication/states/authSlice.js';
 import productReducer from './features/Products/states/productSlice.js';
 import cartReducer from './features/Cart/states/cartSlice.js';
 import wishListReducer from './features/Wishlist/states/wishListSlice.js';
@@ -16,6 +17,7 @@ const persistedCustomListsReducer = persistReducer(customListsPersistConfig, cus
 
 export const reduxStore = configureStore({
     reducer: {
+        auth: authReducer,
         products: productReducer,
         cart: persistedCartReducer,
         wishList: persistedWishListReducer,

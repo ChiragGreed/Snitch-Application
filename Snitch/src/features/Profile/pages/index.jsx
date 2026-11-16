@@ -1,5 +1,6 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useSelector } from 'react-redux';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -46,7 +47,11 @@ export default function ProfileScreen() {
   const router = useRouter();
   const { wishListItems } = useWishList();
   const cartItems = useSelector((state) => state.cart.cartItems);
+  const user = useSelector((state) => state.auth.User);
   const [toastMessage, setToastMessage] = useState(null);
+  const userName = user?.fullname || user?.fullName || user?.name || 'Snitch Member';
+  const userEmail = user?.email;
+  const hasUser = Boolean(user && Object.keys(user).length > 0);
 
   const items = useMemo(() => {
     if (Array.isArray(cartItems)) return cartItems;
@@ -91,31 +96,50 @@ export default function ProfileScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.welcomeSection}>
-          <View style={styles.welcomeHeader}>
-            <View style={styles.welcomeAvatar}>
-              <SnitchIcon name="person" size={26} color={SnitchColors.textSecondary} />
+          {hasUser ? (
+            <View style={styles.welcomeHeader}>
+              <Image
+                source={{ uri: 'https://i.pravatar.cc/150?img=12' }}
+                style={styles.profileAvatar}
+                contentFit="cover"
+                accessibilityLabel={`${userName} profile picture`}
+              />
+              <View style={styles.welcomeCopy}>
+                <Text style={styles.profileName}>{userName}</Text>
+                {userEmail ? (
+                  <Text style={styles.profileEmail}>{userEmail}</Text>
+                ) : null}
+              </View>
             </View>
-            <View style={styles.welcomeCopy}>
-              <Text style={styles.welcomeTitle}>Welcome to Snitch</Text>
-              <Text style={styles.welcomeDescription}>
-                Sign in or create an account to get started.
-              </Text>
-            </View>
-          </View>
-          <View style={styles.authActions}>
-            <Pressable
-              style={[styles.authButton, styles.loginButton]}
-              onPress={() => router.push('/auth/login')}
-            >
-              <Text style={[styles.authButtonText, styles.loginButtonText]}>LOG IN</Text>
-            </Pressable>
-            <Pressable
-              style={[styles.authButton, styles.createAccountButton]}
-              onPress={() => router.push('/auth/register')}
-            >
-              <Text style={styles.authButtonText}>CREATE ACCOUNT</Text>
-            </Pressable>
-          </View>
+          ) : (
+            <>
+              <View style={styles.welcomeHeader}>
+                <View style={styles.welcomeAvatar}>
+                  <SnitchIcon name="person" size={26} color={SnitchColors.textSecondary} />
+                </View>
+                <View style={styles.welcomeCopy}>
+                  <Text style={styles.welcomeTitle}>Welcome to Snitch</Text>
+                  <Text style={styles.welcomeDescription}>
+                    Sign in or create an account to get started.
+                  </Text>
+                </View>
+              </View>
+              <View style={styles.authActions}>
+                <Pressable
+                  style={[styles.authButton, styles.loginButton]}
+                  onPress={() => router.push('/auth/login')}
+                >
+                  <Text style={[styles.authButtonText, styles.loginButtonText]}>LOG IN</Text>
+                </Pressable>
+                <Pressable
+                  style={[styles.authButton, styles.createAccountButton]}
+                  onPress={() => router.push('/auth/register')}
+                >
+                  <Text style={styles.authButtonText}>CREATE ACCOUNT</Text>
+                </Pressable>
+              </View>
+            </>
+          )}
         </View>
 
         <View style={styles.section}>
@@ -237,6 +261,12 @@ const styles = StyleSheet.create({
     borderRadius: SnitchRadius.full,
     backgroundColor: SnitchColors.surfaceContainerLow,
   },
+  profileAvatar: {
+    width: 48,
+    height: 48,
+    borderRadius: SnitchRadius.full,
+    backgroundColor: SnitchColors.surfaceContainerLow,
+  },
   welcomeCopy: {
     flex: 1,
     gap: SnitchSpacing.xs,
@@ -245,6 +275,16 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: SnitchColors.textPrimary,
+  },
+  profileName: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: SnitchColors.textPrimary,
+  },
+  profileEmail: {
+    fontSize: 13,
+    lineHeight: 18,
+    color: SnitchColors.textSecondary,
   },
   welcomeDescription: {
     fontSize: 12,

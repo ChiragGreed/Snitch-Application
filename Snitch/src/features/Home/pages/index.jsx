@@ -20,7 +20,10 @@ import useProducts from '@/features/Products/hooks/useProducts';
 import SearchBar from '@/features/Home/components/SearchBar';
 import Toast from '@/shared/components/Toast';
 
+import useAuth from '@/features/Authentication/hooks/useAuth';
+
 import { styles } from '@/features/Home/styles/homeStyles';
+import { convertStackToolbarSpacerPropsToRNHeaderItem } from 'expo-router/build/layouts/stack-utils/toolbar/StackToolbarSpacer/index.js';
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
