@@ -9,11 +9,13 @@ const useAuth = () => {
 
     const registerHandler = async ({ fullname, email, contact, password, role }) => {
         try {
-            const userData = await registerApi({ fullname: fullname.trim(), email: email.trim().toLowerCase(), contact: contact.trim(), password: password.trim(), role });
-            dispatch(setUser(userData.user));
             dispatch(setLoading(true));
+            const userData = await registerApi({ fullname: fullname.trim(), email: email.trim().toLowerCase(), contact: contact.trim(), password: password.trim(), role });
+            dispatch(setUser(userData?.user));
+            return true;
         } catch (error) {
             console.error("Register Error: ", error);
+            return false;
         }
         finally {
             dispatch(setLoading(false));
@@ -23,9 +25,9 @@ const useAuth = () => {
     const loginHandler = async ({ email, password }) => {
         try {
 
+            dispatch(setLoading(true));
             const userData = await loginApi({ email, password });
             dispatch(setUser(userData?.user));
-            dispatch(setLoading(true));
             return true;
         } catch (error) {
             console.error("Login Handler Error: ", error);
@@ -57,8 +59,8 @@ const useAuth = () => {
 
     const getMeHandler = useCallback(async () => {
         try {
-            const userData = await getMeApi();
             dispatch(setLoading(true));
+            const userData = await getMeApi();
             dispatch(setUser(userData.user));
         } catch (error) {
             return error;

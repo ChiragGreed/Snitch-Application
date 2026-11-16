@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
@@ -11,6 +11,7 @@ import { SnitchColors, SnitchRadius, SnitchSpacing } from '@/constants/snitch-th
 import SnitchHeader from '@/shared/components/SnitchHeader';
 import Toast from '@/shared/components/Toast';
 import useWishList from '@/features/Wishlist/hooks/useWishList';
+import useAuth from '@/features/Authentication/hooks/useAuth';
 
 function SectionHeading({ title, trailing }) {
   return (
@@ -63,6 +64,12 @@ export default function ProfileScreen() {
     [items]
   );
 
+  const { getMeHandler, logoutHandler } = useAuth();
+
+  useEffect(() => {
+    getMeHandler();
+  }, [getMeHandler]);
+
   const triggerToast = useCallback((message) => {
     setToastMessage(message);
     setTimeout(() => setToastMessage(null), 2400);
@@ -75,6 +82,16 @@ export default function ProfileScreen() {
   const handleSupport = useCallback(() => {
     triggerToast('Client support will be available soon.');
   }, [triggerToast]);
+
+  const handleLogout = useCallback(async () => {
+    try {
+      await logoutHandler();
+    } catch (error) {
+      triggerToast(
+        error?.response?.data?.message || 'Unable to log out. Please try again.'
+      );
+    }
+  }, [logoutHandler, triggerToast]);
 
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
@@ -110,6 +127,14 @@ export default function ProfileScreen() {
                   <Text style={styles.profileEmail}>{userEmail}</Text>
                 ) : null}
               </View>
+              <Pressable
+                style={styles.logoutButton}
+                onPress={handleLogout}
+                accessibilityRole="button"
+                accessibilityLabel="Log out"
+              >
+                <Text style={styles.logoutButtonText}>LOG OUT</Text>
+              </Pressable>
             </View>
           ) : (
             <>
@@ -284,6 +309,19 @@ const styles = StyleSheet.create({
   profileEmail: {
     fontSize: 13,
     lineHeight: 18,
+    color: SnitchColors.textSecondary,
+  },
+  logoutButton: {
+    paddingHorizontal: SnitchSpacing.sm,
+    paddingVertical: SnitchSpacing.sm,
+    borderRadius: SnitchRadius.md,
+    borderWidth: 1,
+    borderColor: SnitchColors.border,
+  },
+  logoutButtonText: {
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 0.3,
     color: SnitchColors.textSecondary,
   },
   welcomeDescription: {

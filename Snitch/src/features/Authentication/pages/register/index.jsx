@@ -6,6 +6,7 @@ import { Svg, Path } from 'react-native-svg';
 import { SnitchColors, SnitchRadius, SnitchSpacing } from '@/constants/snitch-theme';
 import { authHeroTextShadows, authSharedStyles } from '@/features/Authentication/styles/authStyles';
 import { useRouter } from 'expo-router';
+import useAuth from '@/features/Authentication/hooks/useAuth.js';
 
 const HERO_IMAGE = 'https://images.unsplash.com/photo-1626386699888-b8865823b279?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D';
 const GoogleIcon = ({ size = 18 }) => (
@@ -19,13 +20,24 @@ const GoogleIcon = ({ size = 18 }) => (
 
 export default function RegisterScreen() {
     const insets = useSafeAreaInsets();
-    const [fullName, setFullName] = useState('');
+    const [fullname, setFullName] = useState('');
     const [email, setEmail] = useState('');
-    const [phone, setPhone] = useState('');
+    const [contact, setContact] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
-    const [sellerAccount, setSellerAccount] = useState(false);
-    const route = useRouter();
+    const [role, setRole] = useState('isBuyer');
+    const router = useRouter();
+
+
+    const { registerHandler } = useAuth();
+
+    async function register() {
+        const response = await registerHandler({ fullname, email, contact, password, role });
+        console.log('response', response);
+        if (response) {
+            router.push(`/`);
+        }
+    }
 
     return (
         <View style={styles.root}>
@@ -80,7 +92,7 @@ export default function RegisterScreen() {
                         <Text style={styles.sheetTitle}>Sign up</Text>
                         <View style={styles.sheetSubtitleRow}>
                             <Text style={styles.sheetSubtitle}>Already have an account?</Text>
-                            <Pressable onPress={() => route.push('/auth/login')}>
+                            <Pressable onPress={() => router.push('/auth/login')}>
                                 <Text style={styles.linkText}>Sign In</Text>
                             </Pressable>
                         </View>
@@ -95,7 +107,7 @@ export default function RegisterScreen() {
                                 style={styles.input}
                                 placeholder="Full Name"
                                 placeholderTextColor={SnitchColors.textLight}
-                                value={fullName}
+                                value={fullname}
                                 onChangeText={setFullName}
                                 autoCapitalize="words"
                                 selectionColor={SnitchColors.secondaryMuted}
@@ -117,7 +129,7 @@ export default function RegisterScreen() {
                             />
                         </View>
 
-                        {/* Phone */}
+                        {/* contact */}
                         <View style={styles.inputRow}>
                             <SnitchIcon name="call" size={20} color={SnitchColors.textMuted} />
                             <View style={styles.phonePrefixBox}>
@@ -129,8 +141,8 @@ export default function RegisterScreen() {
                                 style={[styles.input, { flex: 1 }]}
                                 placeholder="Contact Number"
                                 placeholderTextColor={SnitchColors.textLight}
-                                value={phone}
-                                onChangeText={setPhone}
+                                value={contact}
+                                onChangeText={setContact}
                                 keyboardType="phone-pad"
                                 maxLength={10}
                                 selectionColor={SnitchColors.secondaryMuted}
@@ -165,12 +177,12 @@ export default function RegisterScreen() {
                         {/* Seller account toggle */}
                         <Pressable
                             style={styles.sellerRow}
-                            onPress={() => setSellerAccount((v) => !v)}
+                            onPress={() => setRole((currentRole) => currentRole === 'isSeller' ? 'isBuyer' : 'isSeller')}
                             accessibilityRole="checkbox"
-                            accessibilityState={{ checked: sellerAccount }}
+                            accessibilityState={{ checked: role === 'isSeller' }}
                         >
-                            <View style={[styles.checkbox, sellerAccount && styles.checkboxChecked]}>
-                                {sellerAccount && (
+                            <View style={[styles.checkbox, role === 'isSeller' && styles.checkboxChecked]}>
+                                {role === 'isSeller' && (
                                     <SnitchIcon name="check" size={12} color={SnitchColors.onPrimary} />
                                 )}
                             </View>
@@ -183,7 +195,7 @@ export default function RegisterScreen() {
                         </Pressable>
 
                         {/* CTA */}
-                        <Pressable style={styles.ctaButton} accessibilityRole="button">
+                        <Pressable style={styles.ctaButton} onPress={register} accessibilityRole="button">
                             <Text style={styles.ctaButtonText}>GET STARTED</Text>
                         </Pressable>
                     </View>

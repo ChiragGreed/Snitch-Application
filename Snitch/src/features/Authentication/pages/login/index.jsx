@@ -24,14 +24,17 @@ export default function LoginScreen() {
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [rememberMe, setRememberMe] = useState(false);
+    const router = useRouter();
 
     const { loginHandler } = useAuth();
 
     async function login() {
-        await loginHandler({ email, password });
+        const response = await loginHandler({ email, password });
+        if (response) {
+            router.push(`/`);
+        }
     }
 
-    const route = useRouter();
 
     return (
         <View style={styles.root}>
@@ -89,7 +92,7 @@ export default function LoginScreen() {
                         <Text style={styles.sheetTitle}>Login</Text>
                         <View style={styles.sheetSubtitleRow}>
                             <Text style={styles.sheetSubtitle}>Don't have an account?</Text>
-                            <Pressable onPress={() => route.push('/auth/register')}>
+                            <Pressable onPress={() => router.push('/auth/register')}>
                                 <Text style={styles.linkText}>Sign Up</Text>
                             </Pressable>
                         </View>
