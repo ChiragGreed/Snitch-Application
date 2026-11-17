@@ -5,13 +5,7 @@ import { SnitchIcon } from '@/components/snitch-icon';
 import { SnitchColors } from '@/constants/snitch-theme';
 import { styles } from '@/features/Cart/styles/cartStyles';
 
-export default function CartStickyFooter({
-  totalPayable = 0,
-  originalTotal = 0,
-  onProceed,
-  disabled = false,
-  currency = 'INR',
-}) {
+export default function CartStickyFooter({ totalPayable = 0, originalTotal = 0, onProceed, disabled = false, currency = 'INR' }) {
   const insets = useSafeAreaInsets();
   const currencySymbol = currency === 'INR' ? '₹' : currency;
 

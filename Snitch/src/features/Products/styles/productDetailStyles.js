@@ -91,6 +91,13 @@ export const styles = StyleSheet.create({
         backgroundColor: 'rgba(0,0,0,0.55)',
     },
 
+    viewerCloseButtonText: {
+        color: '#FFFFFF',
+        fontSize: 32,
+        lineHeight: 16,
+        opacity:0.6
+    },
+
     viewerCounter: {
         position: 'absolute',
         left: 20,
@@ -110,7 +117,7 @@ export const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         borderRadius: 22,
-        opacity: 0.8,
+        opacity: 0.3,
         backgroundColor: 'rgba(0,0,0,0.55)',
     },
 
@@ -123,6 +130,8 @@ export const styles = StyleSheet.create({
     },
 
     viewerControlText: {
+        position: 'absolute',
+        top: '22%',
         color: '#FFFFFF',
         fontSize: 32,
         lineHeight: 16,

@@ -58,7 +58,7 @@ const useAuth = () => {
 
     }
 
-    const protectedRouteHandler = async () => {
+    const protectedRouteHandler = useCallback(async () => {
         try {
             await protectedRouteApi();
             return true;
@@ -66,7 +66,7 @@ const useAuth = () => {
         catch (error) {
             return false;
         }
-    }
+    }, []);
 
     const getMeHandler = useCallback(async () => {
         try {

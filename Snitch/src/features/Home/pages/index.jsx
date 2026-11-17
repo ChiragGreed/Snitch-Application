@@ -1,11 +1,11 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { View, ScrollView, ActivityIndicator, Text, Pressable } from 'react-native';
+import { View, ScrollView, ActivityIndicator, Text } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSelector } from 'react-redux';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { CATEGORIES, SORT_OPTIONS } from '@/features/Home/data/homeData';
+import { CATEGORIES } from '@/features/Home/data/homeData';
 import useCart from '@/features/Cart/hooks/useCart';
 import useWishList from '@/features/Wishlist/hooks/useWishList';
 
@@ -17,7 +17,6 @@ import EditorialSections from '@/features/Home/components/EditorialSections';
 import ProductGrid from '@/features/Products/components/ProductGrid';
 import useProducts from '@/features/Products/hooks/useProducts';
 
-import SearchBar from '@/features/Home/components/SearchBar';
 import Toast from '@/shared/components/Toast';
 
 import useAuth from '@/features/Authentication/hooks/useAuth';
@@ -44,9 +43,6 @@ export default function HomeScreen() {
 
   // Home screen state
   const [selectedCategory, setSelectedCategory] = useState('ALL PIECES');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [sortIndex, setSortIndex] = useState(0);
-  const [sortMenuOpen, setSortMenuOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState(null);
   const [toastType, setToastType] = useState('default');
 
@@ -75,16 +71,9 @@ export default function HomeScreen() {
     triggerToast('Added to bag', 'success');
   };
 
-  const handleSearchSubmit = () => {
-    const query = searchQuery.trim();
-    if (!query) return;
-
-    router.push({ pathname: '/explore', params: { search: query } });
-  };
-
-  // Product filtering and sorting
+  // Product filtering
   const filteredProducts = useMemo(() => {
-    let products = productsData.filter((product) => {
+    return productsData.filter((product) => {
       const matchesCategory =
         selectedCategory === 'ALL PIECES' ||
         selectedCategory === 'NEW DROPS' ||
@@ -95,27 +84,17 @@ export default function HomeScreen() {
 
       return matchesCategory;
     });
-
-    const currentSort = SORT_OPTIONS[sortIndex];
-
-    if (currentSort === 'Price: Low to High') {
-      products = [...products].sort((a, b) => a.price - b.price);
-    } else if (currentSort === 'Price: High to Low') {
-      products = [...products].sort((a, b) => b.price - a.price);
-    } else if (currentSort === 'Top Rated') {
-      products = [...products].sort(
-        (a, b) => (b.rating || 0) - (a.rating || 0)
-      );
-    }
-
-    return products;
-  }, [productsData, selectedCategory, sortIndex]);
+  }, [productsData, selectedCategory]);
 
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
       <Toast message={toastMessage} type={toastType} top={insets.top + 54} />
 
-      <SnitchHeader title="Home" onToast={triggerToast} />
+      <SnitchHeader
+        title="Home"
+        onToast={triggerToast}
+        onSearch={() => router.push('/explore')}
+      />
 
       <ScrollView
         style={styles.scroll}
@@ -125,47 +104,6 @@ export default function HomeScreen() {
         ]}
         showsVerticalScrollIndicator={false}
       >
-        <SearchBar
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          onSubmitEditing={handleSearchSubmit}
-          sortMenuOpen={sortMenuOpen}
-          onSort={() => setSortMenuOpen((open) => !open)}
-        />
-
-        {sortMenuOpen ? (
-          <View style={styles.homeSortPanel}>
-            <Text style={styles.homeSortTitle}>Sort by</Text>
-            <View style={styles.homeSortOptions}>
-              {SORT_OPTIONS.map((option, index) => {
-                const selected = sortIndex === index;
-
-                return (
-                  <Pressable
-                    key={option}
-                    style={[
-                      styles.homeSortOption,
-                      selected && styles.homeSortOptionSelected,
-                    ]}
-                    onPress={() => setSortIndex(index)}
-                    accessibilityRole="radio"
-                    accessibilityState={{ selected }}
-                  >
-                    <Text
-                      style={[
-                        styles.homeSortOptionText,
-                        selected && styles.homeSortOptionTextSelected,
-                      ]}
-                    >
-                      {option}
-                    </Text>
-                  </Pressable>
-                );
-              })}
-            </View>
-          </View>
-        ) : null}
-
         <HeroBanner onToast={triggerToast} />
 
         <CategoryChips

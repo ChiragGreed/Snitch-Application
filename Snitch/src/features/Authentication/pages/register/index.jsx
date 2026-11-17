@@ -38,6 +38,14 @@ export default function RegisterScreen() {
         }
     }
 
+    function handleBack() {
+        if (router.canGoBack()) {
+            router.back();
+        } else {
+            router.replace('/');
+        }
+    }
+
     return (
         <View style={styles.root}>
             <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
@@ -52,6 +60,15 @@ export default function RegisterScreen() {
                 {/* Dark + warm gradient overlay */}
                 <View style={styles.heroOverlayDark} />
                 <View style={styles.heroOverlayWarm} />
+
+                <Pressable
+                    style={[styles.backButton, { top: insets.top + 12 }]}
+                    onPress={handleBack}
+                    accessibilityRole="button"
+                    accessibilityLabel="Go back"
+                >
+                    <SnitchIcon name="arrow_back" size={22} color="#FFFFFF" />
+                </Pressable>
 
                 {/* Hero content */}
                 <View style={[styles.heroContent, { paddingTop: insets.top + 16 }]}>

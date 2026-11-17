@@ -5,7 +5,7 @@ import { SnitchIcon } from '@/components/snitch-icon';
 import { Svg, Path } from 'react-native-svg';
 import { SnitchColors, SnitchRadius, SnitchSpacing } from '@/constants/snitch-theme';
 import { authHeroTextShadows, authSharedStyles } from '@/features/Authentication/styles/authStyles';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import useAuth from '@/features/Authentication/hooks/useAuth.js';
 
 const HERO_IMAGE = 'https://ik.imagekit.io/lfqmv9rcq/h-ng-nguy-n-HhQFk_5vbxE-unsplash.jpg';
@@ -25,13 +25,22 @@ export default function LoginScreen() {
     const [showPassword, setShowPassword] = useState(false);
     const [rememberMe, setRememberMe] = useState(false);
     const router = useRouter();
+    const { returnTo } = useLocalSearchParams();
 
     const { loginHandler } = useAuth();
 
     async function login() {
         const response = await loginHandler({ email, password });
         if (response) {
-            router.push(`/`);
+            router.replace(returnTo === '/checkout' ? '/checkout' : '/');
+        }
+    }
+
+    function handleBack() {
+        if (router.canGoBack()) {
+            router.back();
+        } else {
+            router.replace('/');
         }
     }
 
@@ -49,6 +58,15 @@ export default function LoginScreen() {
                 />
                 {/* Dark gradient overlay */}
                 <View style={styles.heroOverlay} />
+
+                <Pressable
+                    style={[styles.backButton, { top: insets.top + 12 }]}
+                    onPress={handleBack}
+                    accessibilityRole="button"
+                    accessibilityLabel="Go back"
+                >
+                    <SnitchIcon name="arrow_back" size={22} color="#FFFFFF" />
+                </Pressable>
 
                 {/* Hero content */}
                 <View style={[styles.heroContent, { paddingTop: insets.top + 16 }]}>

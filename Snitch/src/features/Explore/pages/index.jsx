@@ -401,6 +401,23 @@ export default function ExploreScreen() {
             </Pressable>
           )}
         </View>
+        <Pressable
+          style={styles.filterIconButton}
+          onPress={() => {
+            if (!filtersOpen) setExpandedFilterSection('sort');
+            setFiltersOpen(!filtersOpen);
+          }}
+          accessibilityRole="button"
+          accessibilityLabel="Filter and sort"
+          accessibilityState={{ expanded: filtersOpen }}
+        >
+          <SnitchIcon name="tune" size={19} color={SnitchColors.textPrimary} />
+          {activeFilterCount > 0 ? (
+            <View style={styles.filterCountBadge}>
+              <Text style={styles.filterCountText}>{activeFilterCount}</Text>
+            </View>
+          ) : null}
+        </Pressable>
       </View>
 
       <ScrollView
@@ -524,29 +541,6 @@ export default function ExploreScreen() {
             })}
           </ScrollView>
         )}
-
-        {/* Sorting and filters */}
-        <View style={styles.filterRow}>
-          <Pressable
-            style={styles.filterButton}
-            onPress={() => {
-              if (!filtersOpen) setExpandedFilterSection('sort');
-              setFiltersOpen(!filtersOpen);
-            }}
-            accessibilityRole="button"
-            accessibilityState={{ expanded: filtersOpen }}
-          >
-            <SnitchIcon name="tune" size={17} color="#FFFFFF" />
-            <Text style={styles.filterButtonText}>
-              Filter & Sort{activeFilterCount ? ` (${activeFilterCount})` : ''}
-            </Text>
-            <SnitchIcon
-              name={filtersOpen ? 'expand_less' : 'expand_more'}
-              size={18}
-              color="#FFFFFF"
-            />
-          </Pressable>
-        </View>
 
         {filtersOpen ? (
           <View style={styles.filterPanel}>
@@ -780,6 +774,33 @@ const styles = StyleSheet.create({
     borderRadius: SnitchRadius.full,
     backgroundColor: SnitchColors.surfaceContainerLow,
   },
+  filterIconButton: {
+    width: 42,
+    height: 42,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: SnitchRadius.full,
+    backgroundColor: SnitchColors.surfaceContainerLow,
+    borderWidth: 1,
+    borderColor: SnitchColors.border,
+  },
+  filterCountBadge: {
+    position: 'absolute',
+    top: -3,
+    right: -3,
+    minWidth: 17,
+    height: 17,
+    paddingHorizontal: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: SnitchRadius.full,
+    backgroundColor: SnitchColors.textPrimary,
+  },
+  filterCountText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
   searchInput: {
     flex: 1,
     padding: 0,
@@ -875,25 +896,6 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
 
-  filterRow: {
-    paddingHorizontal: SnitchSpacing.gutter,
-    paddingBottom: 12,
-  },
-  filterButton: {
-    alignSelf: 'flex-start',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: SnitchColors.textPrimary,
-    borderRadius: SnitchRadius.full,
-    paddingHorizontal: 15,
-    paddingVertical: 11,
-  },
-  filterButtonText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#FFFFFF',
-  },
   filterPanel: {
     marginHorizontal: SnitchSpacing.gutter,
     marginBottom: 12,

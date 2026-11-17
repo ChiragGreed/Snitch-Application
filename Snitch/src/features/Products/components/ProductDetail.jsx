@@ -538,7 +538,7 @@ export default function ProductDetailScreen({ product, onAddToCart, onBuyNow, on
                 accessibilityRole="button"
                 accessibilityLabel="Close image viewer"
               >
-                <Text style={styles.viewerControlText}>×</Text>
+                <Text style={styles.viewerCloseButtonText}>×</Text>
               </Pressable>
 
               <View style={[styles.viewerCounter, { top: insets.top + 22 }]}>

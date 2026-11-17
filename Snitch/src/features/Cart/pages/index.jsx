@@ -24,12 +24,7 @@ const FREE_SHIPPING_THRESHOLD = 3196;
 export default function CartScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const {
-    incrementCartItemHandler,
-    decrementCartItemHandler,
-    removeCartItemHandler,
-    clearCartHandler,
-  } = useCart();
+  const { incrementCartItemHandler, decrementCartItemHandler, removeCartItemHandler, clearCartHandler } = useCart();
   const { addToListHandler } = useWishList();
 
   // Read exclusively from Redux cart state
@@ -95,6 +90,7 @@ export default function CartScreen() {
       return;
     }
     triggerToast('Proceeding to Secure Checkout...');
+    router.push('/checkout')
   }, [items.length, triggerToast]);
 
   const handleNavigateProduct = useCallback(
