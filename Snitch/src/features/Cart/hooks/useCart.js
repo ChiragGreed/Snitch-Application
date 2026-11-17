@@ -1,7 +1,8 @@
 import { useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 
-import { addItemQuantity, addSubtotal, addToCart, addtotal, clearCart, removeCartItem, subItemQuantity, subtractSubtotal, subtractTotal } from '@/features/Cart/states/cartSlice';
+import { addItemQuantity, addSubtotal, addToCart, addtotal, clearCart, removeCartItem, setcartItems, subItemQuantity, subtractSubtotal, subtractTotal } from '@/features/Cart/states/cartSlice';
+import { getCartItemsAPi, migrateGuestCartApi } from '@/features/Cart/services/cartApi';
 
 export default function useCart() {
   const dispatch = useDispatch();
@@ -11,8 +12,8 @@ export default function useCart() {
   const addToCartHandler = useCallback((product, variant) => {
     if (!product) return;
 
-    const variantId = variant?._id || null;
-    const variantAttributes = variant?.attribute || {};
+    const variantId = variant?._id || variant?.id || null;
+    const variantAttributes = variant?.attribute || variant?.attributes || {};
     const variantPrice = variant?.price;
     const unitPrice =
       typeof variantPrice === 'number'
@@ -64,11 +65,30 @@ export default function useCart() {
     dispatch(clearCart());
   }, [dispatch]);
 
-  return {
-    addToCartHandler,
-    incrementCartItemHandler,
-    decrementCartItemHandler,
-    removeCartItemHandler,
-    clearCartHandler,
-  };
+  const migrateGuestCartHandler = useCallback(async () => {
+
+    const guestItems = Array.isArray(cartItems)
+      ? cartItems : Array.isArray(cartItems?.items)
+        ? cartItems.items : [];
+
+    const migrationItems = guestItems.map((item) => {
+      const product = item?.productId;
+      const productId = typeof product === 'string' ? product : product?._id || product?.id;
+
+      if (!productId) {
+        throw new Error('Cannot migrate cart item without a product ID');
+      }
+
+      return { productId, variantId: item.variantId, quantity: item.quantity };
+    });
+
+    const migrationResponse = await migrateGuestCartApi(migrationItems);
+    const cartResponse = await getCartItemsAPi();
+
+    dispatch(setcartItems(cartResponse));
+
+    return migrationResponse;
+  }, [cartItems, dispatch]);
+
+  return { addToCartHandler, incrementCartItemHandler, decrementCartItemHandler, removeCartItemHandler, clearCartHandler, migrateGuestCartHandler };
 }

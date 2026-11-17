@@ -1,5 +1,12 @@
 import { createSlice } from "@reduxjs/toolkit";
 
+const getCartItemList = (cartItems) => {
+    if (Array.isArray(cartItems)) return cartItems;
+    if (Array.isArray(cartItems?.cart?.items)) return cartItems.cart.items;
+    if (Array.isArray(cartItems?.items)) return cartItems.items;
+    return [];
+};
+
 const getSafePrice = (item) => {
     if (typeof item?.unitPrice === 'number') return item.unitPrice;
     if (typeof item?.price === 'number') return item.price;
@@ -14,14 +21,14 @@ const getSafePrice = (item) => {
 const cartSlice = createSlice({
     name: 'cart',
     initialState: {
-        cartItems: null,
+        cartItems: [],
         subtotal: 0,
         total: 0,
         currency: 'INR'
     },
     reducers: {
         setcartItems: (state, action) => {
-            state.cartItems = action.payload;
+            state.cartItems = getCartItemList(action.payload);
         },
 
         setSubtotal: (state, action) => {
@@ -34,7 +41,7 @@ const cartSlice = createSlice({
             state.currency = action.payload;
         },
         addItemQuantity: (state, action) => {
-            state.cartItems?.items?.forEach((item) => {
+            getCartItemList(state.cartItems).forEach((item) => {
                 if (item._id == action.payload) {
                     item.quantity += 1;
                     return;
@@ -42,7 +49,7 @@ const cartSlice = createSlice({
             });
         },
         addSubtotal: (state, action) => {
-            state.cartItems?.items?.forEach((item) => {
+            getCartItemList(state.cartItems).forEach((item) => {
                 if (item._id == action.payload) {
                     const price = getSafePrice(item);
                     state.subtotal += price;
@@ -51,7 +58,7 @@ const cartSlice = createSlice({
             });
         },
         addtotal: (state, action) => {
-            state.cartItems?.items?.forEach((item) => {
+            getCartItemList(state.cartItems).forEach((item) => {
                 if (item._id == action.payload) {
                     const price = getSafePrice(item);
                     state.total += price;
@@ -60,7 +67,7 @@ const cartSlice = createSlice({
             });
         },
         subItemQuantity: (state, action) => {
-            state.cartItems?.items?.forEach((item) => {
+            getCartItemList(state.cartItems).forEach((item) => {
                 if (item._id == action.payload) {
                     item.quantity = Math.max(1, item.quantity - 1);
                     return;
@@ -68,7 +75,7 @@ const cartSlice = createSlice({
             });
         },
         subtractSubtotal: (state, action) => {
-            state.cartItems?.items?.forEach((item) => {
+            getCartItemList(state.cartItems).forEach((item) => {
                 if (item._id == action.payload) {
                     const price = getSafePrice(item);
                     state.subtotal = Math.max(0, state.subtotal - price);
@@ -77,7 +84,7 @@ const cartSlice = createSlice({
             });
         },
         subtractTotal: (state, action) => {
-            state.cartItems?.items?.forEach((item) => {
+            getCartItemList(state.cartItems).forEach((item) => {
                 if (item._id == action.payload) {
                     const price = getSafePrice(item);
                     state.total = Math.max(0, state.total - price);
@@ -86,26 +93,21 @@ const cartSlice = createSlice({
             });
         },
         removeCartItem: (state, action) => {
-            if (state.cartItems?.items) {
-                const target = state.cartItems.items.find((item) => item._id === action.payload);
-                if (target) {
-                    const itemTotal = getSafePrice(target) * (target.quantity || 1);
-                    state.subtotal = Math.max(0, state.subtotal - itemTotal);
-                    state.total = Math.max(0, state.total - itemTotal);
-                }
-                state.cartItems.items = state.cartItems.items.filter(
-                    (item) => item._id !== action.payload
-                );
+            const items = getCartItemList(state.cartItems);
+            const target = items.find((item) => item._id === action.payload);
+            if (target) {
+                const itemTotal = getSafePrice(target) * (target.quantity || 1);
+                state.subtotal = Math.max(0, state.subtotal - itemTotal);
+                state.total = Math.max(0, state.total - itemTotal);
             }
+            state.cartItems = items.filter((item) => item._id !== action.payload);
         },
         addToCart: (state, action) => {
-            if (!state.cartItems) {
-                state.cartItems = { items: [] };
-            } else if (!state.cartItems.items) {
-                state.cartItems.items = [];
+            if (!Array.isArray(state.cartItems)) {
+                state.cartItems = [...getCartItemList(state.cartItems)];
             }
             const newItem = action.payload;
-            const existingIndex = state.cartItems.items.findIndex(
+            const existingIndex = state.cartItems.findIndex(
                 (item) => {
                     const itemProductId = item.productId?._id || item.productId?.id;
                     const newProductId = newItem.productId?._id || newItem.productId?.id;
@@ -114,16 +116,16 @@ const cartSlice = createSlice({
                 }
             );
             if (existingIndex >= 0) {
-                state.cartItems.items[existingIndex].quantity += newItem.quantity || 1;
+                state.cartItems[existingIndex].quantity += newItem.quantity || 1;
             } else {
-                state.cartItems.items.push(newItem);
+                state.cartItems.push(newItem);
             }
             const itemPrice = getSafePrice(newItem) * (newItem.quantity || 1);
             state.subtotal += itemPrice;
             state.total += itemPrice;
         },
         clearCart: (state) => {
-            state.cartItems = { items: [] };
+            state.cartItems = [];
             state.subtotal = 0;
             state.total = 0;
         },

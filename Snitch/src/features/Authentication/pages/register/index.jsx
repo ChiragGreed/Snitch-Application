@@ -33,7 +33,6 @@ export default function RegisterScreen() {
 
     async function register() {
         const response = await registerHandler({ fullname, email, contact, password, role });
-        console.log('response', response);
         if (response) {
             router.push(`/`);
         }

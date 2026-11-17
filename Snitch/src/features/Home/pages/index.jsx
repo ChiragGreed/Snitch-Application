@@ -69,9 +69,9 @@ export default function HomeScreen() {
   };
 
   // Add to cart
-  const handleAddToCart = (product) => {
+  const handleAddToCart = (product, variant) => {
     if (!product) return;
-    addToCartHandler(product);
+    addToCartHandler(product, variant);
     triggerToast('Added to bag', 'success');
   };
 

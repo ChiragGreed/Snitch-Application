@@ -158,4 +158,112 @@ export const styles = StyleSheet.create({
   premiumDiscountText: {
     color: SnitchColors.secondaryMuted,
   },
+  variantPickerBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: SnitchSpacing.xl,
+  },
+  variantPickerCard: {
+    width: '100%',
+    maxWidth: 380,
+    maxHeight: '80%',
+    backgroundColor: SnitchColors.surfaceCard,
+    borderRadius: SnitchRadius.lg,
+    padding: SnitchSpacing.lg,
+    elevation: 12,
+  },
+  variantPickerHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: SnitchSpacing.md,
+    marginBottom: SnitchSpacing.md,
+  },
+  variantPickerHeading: {
+    flex: 1,
+    gap: 3,
+  },
+  variantPickerTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: SnitchColors.textPrimary,
+  },
+  variantPickerProduct: {
+    fontSize: 12,
+    fontWeight:'800',
+    color: SnitchColors.textSecondary,
+  },
+  variantPickerClose: {
+    width: 32,
+    height: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: SnitchRadius.full,
+    backgroundColor: SnitchColors.surfaceContainerLow,
+  },
+  variantPickerOptions: {
+    flexShrink: 1,
+  },
+  variantPickerAttribute: {
+    marginBottom: SnitchSpacing.md,
+  },
+  variantPickerAttributeName: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: SnitchColors.primary,
+    marginBottom: SnitchSpacing.sm,
+  },
+  variantPickerChoices: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: SnitchSpacing.sm,
+  },
+  variantPickerChoice: {
+    minHeight: 36,
+    paddingHorizontal: SnitchSpacing.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: SnitchRadius.full,
+    borderWidth: 1,
+    borderColor: SnitchColors.border,
+    backgroundColor: SnitchColors.surfaceCard,
+  },
+  variantPickerChoiceSelected: {
+    borderColor: SnitchColors.textPrimary,
+    backgroundColor: SnitchColors.textPrimary,
+  },
+  variantPickerChoiceText: {
+    fontSize: 12,
+    color: SnitchColors.textPrimary,
+  },
+  variantPickerChoiceTextSelected: {
+    color: '#FFFFFF',
+    fontWeight: '600',
+  },
+  variantPickerAvailability: {
+    minHeight: 18,
+    marginTop: SnitchSpacing.sm,
+    marginBottom: SnitchSpacing.sm,
+    fontSize: 12,
+    fontWeight: '800',
+    color: SnitchColors.error,
+    textAlign: 'center',
+  },
+  variantPickerAddButton: {
+    height: 46,
+    borderRadius: SnitchRadius.full,
+    backgroundColor: SnitchColors.textPrimary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  variantPickerAddButtonDisabled: {
+    opacity: 0.45,
+  },
+  variantPickerAddButtonText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
 });

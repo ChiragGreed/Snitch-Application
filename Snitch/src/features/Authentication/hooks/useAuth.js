@@ -2,16 +2,27 @@ import { useCallback } from "react";
 import { useDispatch } from "react-redux";
 import { registerApi, loginApi, getMeApi, protectedRouteApi, logoutApi } from "../services/authApi.js";
 import { setLoading, setUser } from "../states/authSlice.js";
+import useCart from "@/features/Cart/hooks/useCart";
 
 const useAuth = () => {
 
     const dispatch = useDispatch();
+    const { migrateGuestCartHandler } = useCart();
+
+    const migrateGuestCartAfterAuth = useCallback(async () => {
+        try {
+            await migrateGuestCartHandler();
+        } catch (error) {
+            console.error("Guest cart migration failed: ", error);
+        }
+    }, [migrateGuestCartHandler]);
 
     const registerHandler = async ({ fullname, email, contact, password, role }) => {
         try {
             dispatch(setLoading(true));
             const userData = await registerApi({ fullname: fullname.trim(), email: email.trim().toLowerCase(), contact: contact.trim(), password: password.trim(), role });
             dispatch(setUser(userData?.user));
+            await migrateGuestCartAfterAuth();
             return true;
         } catch (error) {
             console.error("Register Error: ", error);
@@ -22,12 +33,12 @@ const useAuth = () => {
         }
     }
 
-    const loginHandler = async ({ email, password }) => {
+    const loginHandler = useCallback(async ({ email, password }) => {
         try {
-
             dispatch(setLoading(true));
             const userData = await loginApi({ email, password });
             dispatch(setUser(userData?.user));
+            await migrateGuestCartAfterAuth();
             return true;
         } catch (error) {
             console.error("Login Handler Error: ", error);
@@ -36,7 +47,7 @@ const useAuth = () => {
         finally {
             dispatch(setLoading(false));
         }
-    }
+    }, [dispatch, migrateGuestCartAfterAuth]);
 
     const logoutHandler = async () => {
 

@@ -3,6 +3,7 @@ import { View, Text, Pressable } from 'react-native';
 import { Image } from 'expo-image';
 import { SnitchIcon } from '@/components/snitch-icon';
 import { SnitchColors } from '@/constants/snitch-theme';
+import { getVariantAttributes, getVariantId } from '@/features/Products/utils/variantHelpers';
 import { styles } from '@/features/Cart/styles/cartStyles';
 
 export default function CartItemCard({
@@ -39,18 +40,33 @@ export default function CartItemCard({
 
   const quantity = item?.quantity ?? 1;
   const badge = product?.badge || item?.badge;
-  console.log('item', item);
-  const variantAttributes = item?.variantAttributes || {};
-  const attributes =
-    variantAttributes && typeof variantAttributes === 'object' && !Array.isArray(variantAttributes)
-      ? Object.entries(variantAttributes).filter(([, value]) => value != null)
-      : [];
-  const displayedAttributes = attributes.length
-    ? attributes
-    : [
+
+  const productVariants = Array.isArray(product?.variants) ?
+    product.variants : product?.variants && typeof product.variants === 'object'
+      ? [product.variants] : [];
+
+  const selectedVariant = productVariants.find(
+    (variant) => String(getVariantId(variant)) === String(item?.variantId)
+  );
+
+  const itemVariantAttributes = item?.variantAttributes;
+
+  const variantAttributes =
+    itemVariantAttributes &&
+      typeof itemVariantAttributes === 'object' &&
+      !Array.isArray(itemVariantAttributes) &&
+      Object.keys(itemVariantAttributes).length > 0
+      ? itemVariantAttributes
+      : getVariantAttributes(selectedVariant);
+
+  const attributes = variantAttributes && typeof variantAttributes === 'object' && !Array.isArray(variantAttributes)
+    ? Object.entries(variantAttributes).filter(([, value]) => value != null) : [];
+  const displayedAttributes = attributes.length ?
+    attributes : [
       ['Size', item?.size || item?.variant?.size],
       ['Color', item?.color || item?.variant?.color],
     ].filter(([, value]) => value != null);
+    
   const currencySymbol = currency === 'INR' ? '₹' : currency;
 
   return (

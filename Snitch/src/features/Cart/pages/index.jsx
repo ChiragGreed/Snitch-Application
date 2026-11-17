@@ -34,7 +34,6 @@ export default function CartScreen() {
 
   // Read exclusively from Redux cart state
   const { cartItems, subtotal, total, currency = 'INR' } = useSelector((state) => state.cart);
-
   const [toastMessage, setToastMessage] = useState(null);
   const [toastType, setToastType] = useState('default');
 
