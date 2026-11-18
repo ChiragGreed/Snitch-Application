@@ -65,10 +65,14 @@ export default function HomeScreen() {
   };
 
   // Add to cart
-  const handleAddToCart = (product, variant) => {
+  const handleAddToCart = async (product, variant) => {
     if (!product) return;
-    addToCartHandler(product, variant);
-    triggerToast('Added to bag', 'success');
+    try {
+      const added = await addToCartHandler(product, variant);
+      if (added) triggerToast('Added to bag', 'success');
+    } catch {
+      triggerToast('Unable to add to bag. Please try again.', 'warning');
+    }
   };
 
   // Product filtering

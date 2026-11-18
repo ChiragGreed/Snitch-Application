@@ -123,10 +123,7 @@ export default function useCheckout() {
             );
 
         } catch (error) {
-            console.log(
-                'Checkout error:',
-                error?.response?.data || error?.message || error
-            );
+            console.log('Checkout error:', error?.response?.data || error?.message || error);
 
             const message =
                 error?.response?.data?.message ||

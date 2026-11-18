@@ -1,21 +1,33 @@
 import { createSlice } from "@reduxjs/toolkit";
 
-const getCartItemList = (cartItems) => {
-    if (Array.isArray(cartItems)) return cartItems;
-    if (Array.isArray(cartItems?.cart?.items)) return cartItems.cart.items;
-    if (Array.isArray(cartItems?.items)) return cartItems.items;
-    return [];
+const getItemPrice = (item) => {
+    if (typeof item.unitPrice === 'number') return item.unitPrice;
+
+    const product = item.productId;
+    if (!product || typeof product !== 'object') return 0;
+
+    const variant = product.variants;
+    if (
+        variant &&
+        variant._id === item.variantId &&
+        variant.price &&
+        typeof variant.price.amount === 'number'
+    ) {
+        return variant.price.amount;
+    }
+
+    if (product.price && typeof product.price.amount === 'number') {
+        return product.price.amount;
+    }
+
+    return 0;
 };
 
-const getSafePrice = (item) => {
-    if (typeof item?.unitPrice === 'number') return item.unitPrice;
-    if (typeof item?.price === 'number') return item.price;
-    const p = item?.productId;
-    if (typeof p?.variants?.price?.amount === 'number') return p.variants.price.amount;
-    if (typeof p?.variants?.price === 'number') return p.variants.price;
-    if (typeof p?.price?.amount === 'number') return p.price.amount;
-    if (typeof p?.price === 'number') return p.price;
-    return 0;
+const getProductId = (product) => {
+    if (typeof product === 'string') return product;
+    if (!product) return null;
+    if (product._id) return product._id;
+    return product.id;
 };
 
 const cartSlice = createSlice({
@@ -28,7 +40,11 @@ const cartSlice = createSlice({
     },
     reducers: {
         setcartItems: (state, action) => {
-            state.cartItems = getCartItemList(action.payload);
+            const cart = action.payload.cart;
+            state.cartItems = cart.items;
+            state.subtotal = cart.totalPrice.amount;
+            state.total = cart.totalPrice.amount;
+            state.currency = cart.totalPrice.currency;
         },
 
         setSubtotal: (state, action) => {
@@ -41,86 +57,55 @@ const cartSlice = createSlice({
             state.currency = action.payload;
         },
         addItemQuantity: (state, action) => {
-            getCartItemList(state.cartItems).forEach((item) => {
-                if (item._id == action.payload) {
-                    item.quantity += 1;
-                    return;
-                }
-            });
+            const item = state.cartItems.find((cartItem) => cartItem._id === action.payload);
+            if (item) item.quantity += 1;
         },
         addSubtotal: (state, action) => {
-            getCartItemList(state.cartItems).forEach((item) => {
-                if (item._id == action.payload) {
-                    const price = getSafePrice(item);
-                    state.subtotal += price;
-                    return;
-                }
-            });
+            const item = state.cartItems.find((cartItem) => cartItem._id === action.payload);
+            if (item) state.subtotal += getItemPrice(item);
         },
         addtotal: (state, action) => {
-            getCartItemList(state.cartItems).forEach((item) => {
-                if (item._id == action.payload) {
-                    const price = getSafePrice(item);
-                    state.total += price;
-                    return;
-                }
-            });
+            const item = state.cartItems.find((cartItem) => cartItem._id === action.payload);
+            if (item) state.total += getItemPrice(item);
         },
         subItemQuantity: (state, action) => {
-            getCartItemList(state.cartItems).forEach((item) => {
-                if (item._id == action.payload) {
-                    item.quantity = Math.max(1, item.quantity - 1);
-                    return;
-                }
-            });
+            const item = state.cartItems.find((cartItem) => cartItem._id === action.payload);
+            if (item) item.quantity = Math.max(1, item.quantity - 1);
         },
         subtractSubtotal: (state, action) => {
-            getCartItemList(state.cartItems).forEach((item) => {
-                if (item._id == action.payload) {
-                    const price = getSafePrice(item);
-                    state.subtotal = Math.max(0, state.subtotal - price);
-                    return;
-                }
-            });
+            const item = state.cartItems.find((cartItem) => cartItem._id === action.payload);
+            if (item) state.subtotal = Math.max(0, state.subtotal - getItemPrice(item));
         },
         subtractTotal: (state, action) => {
-            getCartItemList(state.cartItems).forEach((item) => {
-                if (item._id == action.payload) {
-                    const price = getSafePrice(item);
-                    state.total = Math.max(0, state.total - price);
-                    return;
-                }
-            });
+            const item = state.cartItems.find((cartItem) => cartItem._id === action.payload);
+            if (item) state.total = Math.max(0, state.total - getItemPrice(item));
         },
         removeCartItem: (state, action) => {
-            const items = getCartItemList(state.cartItems);
-            const target = items.find((item) => item._id === action.payload);
+            const target = state.cartItems.find((item) => item._id === action.payload);
             if (target) {
-                const itemTotal = getSafePrice(target) * (target.quantity || 1);
+                const itemTotal = getItemPrice(target) * target.quantity;
                 state.subtotal = Math.max(0, state.subtotal - itemTotal);
                 state.total = Math.max(0, state.total - itemTotal);
             }
-            state.cartItems = items.filter((item) => item._id !== action.payload);
+            state.cartItems = state.cartItems.filter((item) => item._id !== action.payload);
         },
         addToCart: (state, action) => {
-            if (!Array.isArray(state.cartItems)) {
-                state.cartItems = [...getCartItemList(state.cartItems)];
-            }
             const newItem = action.payload;
-            const existingIndex = state.cartItems.findIndex(
-                (item) => {
-                    const itemProductId = item.productId?._id || item.productId?.id;
-                    const newProductId = newItem.productId?._id || newItem.productId?.id;
-                    return itemProductId && itemProductId === newProductId &&
-                        (item.variantId || null) === (newItem.variantId || null);
-                }
-            );
+            const newProductId = getProductId(newItem.productId);
+            const existingIndex = newProductId
+                ? state.cartItems.findIndex((item) =>
+                    getProductId(item.productId) === newProductId &&
+                    item.variantId === newItem.variantId
+                )
+                : -1;
+            const quantity = typeof newItem.quantity === 'number' ? newItem.quantity : 1;
+
             if (existingIndex >= 0) {
-                state.cartItems[existingIndex].quantity += newItem.quantity || 1;
+                state.cartItems[existingIndex].quantity += quantity;
             } else {
-                state.cartItems.push(newItem);
+                state.cartItems.push({ ...newItem, quantity });
             }
-            const itemPrice = getSafePrice(newItem) * (newItem.quantity || 1);
+            const itemPrice = getItemPrice(newItem) * quantity;
             state.subtotal += itemPrice;
             state.total += itemPrice;
         },

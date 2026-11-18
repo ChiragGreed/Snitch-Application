@@ -347,10 +347,14 @@ export default function ExploreScreen() {
     );
   };
 
-  const handleAddToCart = (product) => {
+  const handleAddToCart = async (product) => {
     if (!product) return;
-    addToCartHandler(product);
-    triggerToast('Added to bag', 'success');
+    try {
+      const added = await addToCartHandler(product);
+      if (added) triggerToast('Added to bag', 'success');
+    } catch {
+      triggerToast('Unable to add to bag. Please try again.', 'warning');
+    }
   };
 
   const handleNavigateProduct = useCallback(

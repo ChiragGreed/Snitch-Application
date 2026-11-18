@@ -51,9 +51,13 @@ export default function ProductDetailPage() {
     return added;
   }, [showToast, toggleListHandler]);
 
-  const handleAddToCart = useCallback((p, variant) => {
-    addToCartHandler(p, variant);
-    showToast('Added to bag', 'success');
+  const handleAddToCart = useCallback(async (p, variant) => {
+    try {
+      const added = await addToCartHandler(p, variant);
+      if (added) showToast('Added to bag', 'success');
+    } catch {
+      showToast('Unable to add to bag. Please try again.', 'warning');
+    }
   }, [addToCartHandler, showToast]);
 
   const handleBuyNow = useCallback(() => {

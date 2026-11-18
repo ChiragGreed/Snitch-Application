@@ -2,18 +2,20 @@ import { useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 
 import { addItemQuantity, addSubtotal, addToCart, addtotal, clearCart, removeCartItem, setcartItems, subItemQuantity, subtractSubtotal, subtractTotal } from '@/features/Cart/states/cartSlice';
-import { getCartItemsAPi, migrateGuestCartApi } from '@/features/Cart/services/cartApi';
+import { addItemToCartApi, getCartItemsAPi, migrateGuestCartApi } from '@/features/Cart/services/cartApi';
 
 export default function useCart() {
   const dispatch = useDispatch();
   const cartItems = useSelector((state) => state.cart.cartItems);
+  const user = useSelector((state) => state.auth.User);
   const items = Array.isArray(cartItems) ? cartItems : Array.isArray(cartItems?.items) ? cartItems.items : [];
 
-  const addToCartHandler = useCallback((product, variant) => {
-    if (!product) return;
+  const addToCartHandler = useCallback(async (product, variant) => {
+    if (!product) return false;
 
     const variantId = variant?._id || variant?.id || null;
     const variantAttributes = variant?.attribute || variant?.attributes || {};
+    const productId = product._id || product.id;
     const variantPrice = variant?.price;
     const unitPrice =
       typeof variantPrice === 'number'
@@ -24,9 +26,20 @@ export default function useCart() {
             ? product.price
             : product.price?.amount || 0;
 
+    if (user) {
+      if (!productId) {
+        throw new Error('Cannot add cart item without a product ID');
+      }
+
+      await addItemToCartApi(productId, variantId);
+      const cartResponse = await getCartItemsAPi();
+      dispatch(setcartItems(cartResponse));
+      return true;
+    }
+
     dispatch(
       addToCart({
-        _id: `cart-${product.id || product._id}-${variantId || 'default'}-${Date.now()}`,
+        _id: `cart-${productId}-${variantId || 'default'}-${Date.now()}`,
         productId: product,
         variantId,
         variantAttributes,
@@ -34,7 +47,8 @@ export default function useCart() {
         unitPrice,
       })
     );
-  }, [dispatch]);
+    return true;
+  }, [dispatch, user]);
 
   const incrementCartItemHandler = useCallback((id) => {
     dispatch(addItemQuantity(id));

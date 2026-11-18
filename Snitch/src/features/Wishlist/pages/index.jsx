@@ -92,24 +92,41 @@ export default function WishlistScreen() {
   );
 
   const handleMoveToBag = useCallback(
-    (product) => {
-      addToCartHandler(product);
-      removeFromListHandler(product);
-      triggerToast('Added to bag', 'success');
+    async (product) => {
+      try {
+        const added = await addToCartHandler(product);
+        if (!added) return;
+        removeFromListHandler(product);
+        triggerToast('Added to bag', 'success');
+      } catch {
+        triggerToast('Unable to add to bag. Please try again.', 'warning');
+      }
     },
     [addToCartHandler, removeFromListHandler, triggerToast]
   );
 
-  const handleMoveAllToBag = useCallback(() => {
+  const handleMoveAllToBag = useCallback(async () => {
     if (availableItems.length === 0) {
       triggerToast('No in-stock items to move');
       return;
     }
-    availableItems.forEach((product) => {
-      addToCartHandler(product);
-      removeFromListHandler(product);
-    });
-    triggerToast('Added to bag', 'success');
+    let failedCount = 0;
+    for (const product of availableItems) {
+      try {
+        const added = await addToCartHandler(product);
+        if (added) {
+          removeFromListHandler(product);
+        } else {
+          failedCount += 1;
+        }
+      } catch {
+        failedCount += 1;
+      }
+    }
+    triggerToast(
+      failedCount ? 'Some items could not be moved to bag.' : 'Added to bag',
+      failedCount ? 'warning' : 'success'
+    );
   }, [addToCartHandler, availableItems, removeFromListHandler, triggerToast]);
 
   const handlePressProduct = useCallback(

@@ -13,6 +13,7 @@ export const addItemToCartApi = async (productId, variantId) => {
 export const getCartItemsAPi = async () => {
 
     const response = await api.get('/items');
+    console.log("response", response.data);
     return response.data;
 }
 
