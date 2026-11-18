@@ -76,8 +76,21 @@ export default function ProfileScreen() {
   }, []);
 
   const requestSignIn = useCallback(() => {
-    triggerToast('Sign in will be available soon.');
-  }, [triggerToast]);
+    router.push('/auth/login');
+  }, [router]);
+
+  const handleAccountFeature = useCallback(() => {
+    if (hasUser) {
+      triggerToast('This feature will be available soon.');
+      return;
+    }
+
+    requestSignIn();
+  }, [hasUser, requestSignIn, triggerToast]);
+
+  const handleOrders = useCallback(() => {
+    router.push(hasUser ? '/orders/myOrders' : '/auth/login');
+  }, [hasUser, router]);
 
   const handleSupport = useCallback(() => {
     triggerToast('Client support will be available soon.');
@@ -187,30 +200,30 @@ export default function ProfileScreen() {
         </View>
 
         <View style={styles.section}>
-          <SectionHeading title="YOUR ACCOUNT" trailing="GUEST MODE" />
+          <SectionHeading title="YOUR ACCOUNT" trailing={hasUser ? null : 'GUEST MODE'} />
           <View style={styles.rowsCard}>
             <ProfileRow
               icon="local_activity"
               title="My Orders"
               description="Past purchases & track shipments"
-              onPress={requestSignIn}
-              requiresSignIn
+              onPress={handleOrders}
+              requiresSignIn={!hasUser}
             />
             <View style={styles.rowDivider} />
             <ProfileRow
               icon="info"
               title="Saved Addresses"
               description="Manage delivery locations"
-              onPress={requestSignIn}
-              requiresSignIn
+              onPress={handleAccountFeature}
+              requiresSignIn={!hasUser}
             />
             <View style={styles.rowDivider} />
             <ProfileRow
               icon="person"
               title="Profile & Security"
               description="Contact details and passwords"
-              onPress={requestSignIn}
-              requiresSignIn
+              onPress={handleAccountFeature}
+              requiresSignIn={!hasUser}
             />
           </View>
         </View>

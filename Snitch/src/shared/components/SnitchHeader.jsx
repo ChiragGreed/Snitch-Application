@@ -5,10 +5,27 @@ import { SnitchIcon } from '@/components/snitch-icon';
 import { SnitchColors } from '@/constants/snitch-theme';
 import { styles } from '@/shared/styles/SnitchHeader';
 
-export default function SnitchHeader({ title, onToast, onSearch, onNotifications, onProfile }) {
+export default function SnitchHeader({
+  title,
+  onToast,
+  onSearch,
+  onNotifications,
+  onProfile,
+  onBack,
+}) {
   return (
     <View style={styles.header}>
       <View style={styles.headerLeft}>
+        {onBack ? (
+          <Pressable
+            style={styles.headerIconButton}
+            onPress={onBack}
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
+          >
+            <SnitchIcon name="arrow_back" size={21} color={SnitchColors.textPrimary} />
+          </Pressable>
+        ) : null}
         <Text style={styles.brandWordmark}>SNITCH</Text>
         <View style={styles.headerDivider} />
         <Text style={styles.headerTitle}>{title}</Text>
