@@ -11,10 +11,24 @@ export const addItemToCartApi = async (productId, variantId) => {
 }
 
 export const getCartItemsAPi = async () => {
-
     const response = await api.get('/items');
-    console.log("response", response.data);
     return response.data;
+}
+
+export const addItemQuantityApi = async (itemId) => {
+    await api.post('/addItemQuantity', { itemId });
+}
+
+export const subItemQuantityApi = async (itemId) => {
+    await api.post('/subItemQuantity', { itemId });
+}
+
+export const removeItemApi = async (itemId) => {
+    await api.post('/removeItem', { itemId });
+}
+
+export const clearCartApi = async () => {
+    await api.delete('/clear');
 }
 
 export const migrateGuestCartApi = async (items) => {

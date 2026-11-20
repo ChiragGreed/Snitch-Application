@@ -31,6 +31,11 @@ export default function HomeScreen() {
   const { getProductsHandler } = useProducts();
   const { addToCartHandler } = useCart();
   const { wishListItems, toggleListHandler } = useWishList();
+  const { getMeHandler } = useAuth();
+
+  useEffect(() => {
+    getMeHandler();
+  }, [getMeHandler]);
 
   useEffect(() => {
     getProductsHandler();

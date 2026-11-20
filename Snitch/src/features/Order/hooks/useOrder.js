@@ -11,7 +11,7 @@ const useOrder = () => {
     const createOrderHandler = useCallback(async (cartId) => {
         const res = await createOrderApi(cartId);
         dispatch(setOrderDets(res.order));
-        return res;
+        return res.order;
     }, [dispatch]);
 
     const getOrderHandler = useCallback(async () => {

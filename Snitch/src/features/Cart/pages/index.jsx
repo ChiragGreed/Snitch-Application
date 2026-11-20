@@ -1,4 +1,4 @@
-import React, { useMemo, useCallback, useState } from 'react';
+import React, { useMemo, useCallback, useState, useEffect } from 'react';
 import { View, Text, ScrollView, Pressable } from 'react-native';
 import { useSelector } from 'react-redux';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -24,7 +24,7 @@ const FREE_SHIPPING_THRESHOLD = 3196;
 export default function CartScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { incrementCartItemHandler, decrementCartItemHandler, removeCartItemHandler, clearCartHandler } = useCart();
+  const { getCartItemsHandler, incrementCartItemHandler, decrementCartItemHandler, removeCartItemHandler, clearCartHandler } = useCart();
   const { addToListHandler } = useWishList();
 
   // Read exclusively from Redux cart state
@@ -51,16 +51,17 @@ export default function CartScreen() {
     return items.reduce((acc, item) => acc + (item.quantity || 1), 0);
   }, [items]);
 
+  useEffect(() => {
+    getCartItemsHandler();
+  }, [getCartItemsHandler]);
+
   const handleIncrement = useCallback((id) => {
     incrementCartItemHandler(id);
   }, [incrementCartItemHandler]);
 
   const handleDecrement = useCallback(
     (id) => {
-      const removed = decrementCartItemHandler(id);
-      if (removed) {
-        triggerToast('Item removed from bag');
-      }
+      decrementCartItemHandler(id);
     },
     [decrementCartItemHandler, triggerToast]
   );
@@ -159,11 +160,24 @@ export default function CartScreen() {
               </View>
             </View>
 
+          </View>
+
+          <View style={styles.cartActions}>
             <Pressable
+              accessibilityRole="button"
               style={styles.moveWishlistButton}
               onPress={handleMoveAllToWishlist}
             >
               <Text style={styles.moveWishlistText}>Move all to Wishlist</Text>
+            </Pressable>
+
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Clear all items from cart"
+              style={styles.clearCartButton}
+              onPress={clearCartHandler}
+            >
+              <Text style={styles.clearCartText}>CLEAR CART</Text>
             </Pressable>
           </View>
 

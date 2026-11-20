@@ -111,16 +111,7 @@ export default function useCheckout() {
             // 5. Clear local cart
             dispatch(clearCart());
 
-            Alert.alert(
-                'Order placed!',
-                'Your payment was successful and your order has been placed.',
-                [
-                    {
-                        text: 'Continue shopping',
-                        onPress: () => router.replace('/(tabs)'),
-                    },
-                ]
-            );
+            router.replace('/orders/orderConfirmation');
 
         } catch (error) {
             console.log('Checkout error:', error?.response?.data || error?.message || error);

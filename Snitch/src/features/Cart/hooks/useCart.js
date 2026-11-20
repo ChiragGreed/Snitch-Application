@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 
 import { addItemQuantity, addSubtotal, addToCart, addtotal, clearCart, removeCartItem, setcartItems, subItemQuantity, subtractSubtotal, subtractTotal } from '@/features/Cart/states/cartSlice';
-import { addItemToCartApi, getCartItemsAPi, migrateGuestCartApi } from '@/features/Cart/services/cartApi';
+import { addItemQuantityApi, addItemToCartApi, clearCartApi, getCartItemsAPi, migrateGuestCartApi, removeItemApi, subItemQuantityApi } from '@/features/Cart/services/cartApi';
 
 export default function useCart() {
   const dispatch = useDispatch();
@@ -50,13 +50,37 @@ export default function useCart() {
     return true;
   }, [dispatch, user]);
 
-  const incrementCartItemHandler = useCallback((id) => {
+  const getCartItemsHandler = useCallback(async () => {
+    if (user) {
+      const cartResponse = await getCartItemsAPi();
+      dispatch(setcartItems(cartResponse));
+      return true;
+    }
+  }, [dispatch, user]);
+
+  const incrementCartItemHandler = useCallback(async (id) => {
+    if (user) {
+      if (!id) {
+        throw new Error('Cannot increase item quantity without an item ID');
+      }
+
+      await addItemQuantityApi(id);
+    }
+
     dispatch(addItemQuantity(id));
     dispatch(addSubtotal(id));
     dispatch(addtotal(id));
   }, [dispatch]);
 
-  const decrementCartItemHandler = useCallback((id) => {
+  const decrementCartItemHandler = useCallback(async (id) => {
+    if (user) {
+      if (!id) {
+        throw new Error('Cannot decrease item quantity without an item ID');
+      }
+
+      await subItemQuantityApi(id);
+    }
+
     const target = items.find((item) => item._id === id);
     if (target && target.quantity <= 1) {
       dispatch(removeCartItem(id));
@@ -69,15 +93,23 @@ export default function useCart() {
     return false;
   }, [dispatch, items]);
 
-  const removeCartItemHandler = useCallback((id) => {
+  const removeCartItemHandler = useCallback(async (id) => {
+    if (user) {
+      if (!id) {
+        throw new Error('Cannot remove item from cart without an item ID');
+      }
+
+      await removeItemApi(id);
+    }
     const removedItem = items.find((item) => item._id === id);
     dispatch(removeCartItem(id));
     return removedItem;
   }, [dispatch, items]);
 
-  const clearCartHandler = useCallback(() => {
+  const clearCartHandler = useCallback(async () => {
+    if (user) await clearCartApi();
     dispatch(clearCart());
-  }, [dispatch]);
+  }, [dispatch, user]);
 
   const migrateGuestCartHandler = useCallback(async () => {
 
@@ -104,5 +136,5 @@ export default function useCart() {
     return migrationResponse;
   }, [cartItems, dispatch]);
 
-  return { addToCartHandler, incrementCartItemHandler, decrementCartItemHandler, removeCartItemHandler, clearCartHandler, migrateGuestCartHandler };
+  return { addToCartHandler, getCartItemsHandler, incrementCartItemHandler, decrementCartItemHandler, removeCartItemHandler, clearCartHandler, migrateGuestCartHandler };
 }
