@@ -1,8 +1,10 @@
 import { useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 
-import { addItemQuantity, addSubtotal, addToCart, addtotal, clearCart, removeCartItem, setcartItems, subItemQuantity, subtractSubtotal, subtractTotal } from '@/features/Cart/states/cartSlice';
+import { addItemQuantity, addSubtotal, addToCart, addtotal, cartFetchFailed, cartFetchStarted, cartFetchSucceeded, clearCart, removeCartItem, setcartItems, subItemQuantity, subtractSubtotal, subtractTotal } from '@/features/Cart/states/cartSlice';
 import { addItemQuantityApi, addItemToCartApi, clearCartApi, getCartItemsAPi, migrateGuestCartApi, removeItemApi, subItemQuantityApi } from '@/features/Cart/services/cartApi';
+
+let cartFetchRequestSequence = 0;
 
 export default function useCart() {
   const dispatch = useDispatch();
@@ -51,10 +53,21 @@ export default function useCart() {
   }, [dispatch, user]);
 
   const getCartItemsHandler = useCallback(async () => {
-    if (user) {
+    if (!user) return false;
+
+    const requestId = `${Date.now()}-${++cartFetchRequestSequence}`;
+    dispatch(cartFetchStarted(requestId));
+
+    try {
       const cartResponse = await getCartItemsAPi();
-      dispatch(setcartItems(cartResponse));
+      dispatch(cartFetchSucceeded({ requestId, cartResponse }));
       return true;
+    } catch {
+      dispatch(cartFetchFailed({
+        requestId,
+        error: 'Unable to load your bag. Please try again.',
+      }));
+      return false;
     }
   }, [dispatch, user]);
 

@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, ActivityIndicator, Text, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
@@ -10,36 +10,27 @@ import { useSelector } from 'react-redux';
 import useCart from '@/features/Cart/hooks/useCart';
 import useWishList from '@/features/Wishlist/hooks/useWishList';
 import Toast from '@/shared/components/Toast';
+import ScreenLoader from '@/shared/components/ScreenLoader';
+import ErrorState from '@/shared/components/ErrorState';
 
 export default function ProductDetailPage() {
   const { id } = useLocalSearchParams();
+  const productId = Array.isArray(id) ? id[0] : id;
   const { getProductHandler } = useProducts();
   const { addToCartHandler } = useCart();
   const { isInList, toggleListHandler } = useWishList();
 
   const product = useSelector((state) => state.products.Product);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const productDetails = useSelector((state) => state.products.productDetails);
   const [toastEvent, setToastEvent] = useState({ id: 0, message: null, type: 'default' });
 
   useEffect(() => {
-    if (!id) return;
-
-    try {
-      setLoading(true);
-      setError(null);
-
-      getProductHandler(id)
-    }
-    catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong');
-    }
-    finally {
-      setLoading(false);
-      console.log('Product :', product) 
-    }
-
-  }, [id]);
+    if (!productId) return;
+    const fetchProduct = async () => {
+      await getProductHandler(productId);
+    };
+    fetchProduct();
+  }, [getProductHandler, productId]);
 
   const showToast = useCallback((message, type = 'default') => {
     setToastEvent((current) => ({ id: current.id + 1, message, type }));
@@ -64,19 +55,23 @@ export default function ProductDetailPage() {
     showToast('Please sign in to continue with Buy Now.', 'warning');
   }, [showToast]);
 
-  if (loading) {
-    return (
-      <View style={styles.centered}>
-        <ActivityIndicator size="large" color={SnitchColors.textPrimary} />
-      </View>
-    );
+  if (!productId) {
+    return <ErrorState title="Product not found" message="This product is unavailable." />;
   }
 
-  if (error || !product) {
+  const isCurrentProduct = productDetails.productId === productId;
+  if (!isCurrentProduct || productDetails.loading) {
+    return <ScreenLoader message="Loading product..." containerStyle={styles.centered} />;
+  }
+
+  if (productDetails.error || !product) {
     return (
-      <View style={styles.centered}>
-        <Text style={styles.errorText}>{error || 'Product not found.'}</Text>
-      </View>
+      <ErrorState
+        title="Unable to load product"
+        message={productDetails.error || 'This product is unavailable.'}
+        onRetry={() => getProductHandler(productId)}
+        containerStyle={styles.centered}
+      />
     );
   }
 
@@ -104,16 +99,9 @@ export default function ProductDetailPage() {
 const styles = StyleSheet.create({
   page: {
     flex: 1,
-  },
-  centered: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
     backgroundColor: SnitchColors.canvas,
   },
-  errorText: {
-    fontSize: 14,
-    color: SnitchColors.textMuted,
-    textAlign: 'center',
+  centered: {
+    backgroundColor: SnitchColors.canvas,
   },
 });

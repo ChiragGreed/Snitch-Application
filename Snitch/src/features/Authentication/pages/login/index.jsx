@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, StatusBar, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Image, KeyboardAvoidingView, Linking, Platform, Pressable, ScrollView, StatusBar, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SnitchIcon } from '@/components/snitch-icon';
 import { Svg, Path } from 'react-native-svg';
@@ -34,6 +34,10 @@ export default function LoginScreen() {
         if (response) {
             router.replace(returnTo === '/checkout' ? '/checkout' : '/');
         }
+    }
+
+    function googleAuthPress() {
+        Linking.openURL('https://snitch-ecommerce.onrender.com/api/auth/google');
     }
 
     function handleBack() {
@@ -192,7 +196,7 @@ export default function LoginScreen() {
                     </View>
 
                     {/* Google Sign In */}
-                    <Pressable style={styles.socialButton} accessibilityRole="button" accessibilityLabel="Continue with Google">
+                    <Pressable style={styles.socialButton} onPress={googleAuthPress} accessibilityRole="button" accessibilityLabel="Continue with Google">
                         <GoogleIcon />
                         <Text style={styles.socialButtonText}>Continue with Google</Text>
                     </Pressable>

@@ -1,6 +1,6 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { View, Text, TextInput, ScrollView, Pressable, Switch, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, Text, TextInput, ScrollView, Pressable, Switch, StyleSheet } from 'react-native';
 import { useSelector } from 'react-redux';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -12,9 +12,11 @@ import useWishList from '@/features/Wishlist/hooks/useWishList';
 import useCart from '@/features/Cart/hooks/useCart';
 import SnitchHeader from '@/shared/components/SnitchHeader';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { getCategoriesApi } from '@/features/Products/services/productApi';
 import ProductCard from '@/features/Products/components/ProductCard';
 import Toast from '@/shared/components/Toast';
+import ScreenLoader from '@/shared/components/ScreenLoader';
+import ErrorState from '@/shared/components/ErrorState';
+import EmptyState from '@/shared/components/EmptyState';
 
 const SORT_OPTIONS = [
   'Featured',
@@ -70,13 +72,16 @@ function FilterAccordion({ title, summary, expanded, onPress, children }) {
 
 export default function ExploreScreen() {
   const insets = useSafeAreaInsets();
-  const { getProductsHandler } = useProducts();
+  const { getProductsHandler, getCategoriesHandler } = useProducts();
   const { wishListItems, isInList, toggleListHandler } = useWishList();
   const { addToCartHandler } = useCart();
 
   const products = useSelector((state) => state.products.AllProducts);
   const productStatus = useSelector((state) => state.products.status);
   const productError = useSelector((state) => state.products.error);
+  const categories = useSelector((state) => state.products.Categories);
+  const categoriesStatus = useSelector((state) => state.products.categoriesStatus);
+  const categoryError = useSelector((state) => state.products.categoriesError);
 
   const router = useRouter();
   const { search: searchParam } = useLocalSearchParams();
@@ -85,10 +90,6 @@ export default function ExploreScreen() {
     : typeof searchParam === 'string'
       ? searchParam
       : '';
-  const [categories, setCategories] = useState([]);
-  const [categoriesLoading, setCategoriesLoading] = useState(true);
-  const [categoryError, setCategoryError] = useState(null);
-
   const [selectedParentId, setSelectedParentId] = useState(ALL_CATEGORY_ID);
   const [selectedChildId, setSelectedChildId] = useState(null);
 
@@ -114,35 +115,8 @@ export default function ExploreScreen() {
   }, [getProductsHandler]);
 
   useEffect(() => {
-    let isMounted = true;
-
-    const fetchCategories = async () => {
-      try {
-        setCategoriesLoading(true);
-        setCategoryError(null);
-
-        const data = await getCategoriesApi(); 
-
-        if (isMounted) {
-          setCategories(Array.isArray(data) ? data : []);
-        }
-      } catch (error) {
-        if (isMounted) {
-          setCategoryError(
-            error?.response?.data?.message || 'Unable to load categories.'
-          );
-        }
-      } finally {
-        if (isMounted) setCategoriesLoading(false);
-      }
-    };
-
-    fetchCategories();
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+    getCategoriesHandler();
+  }, [getCategoriesHandler]);
 
   const categoriesWithProducts = useMemo(
     () =>
@@ -371,8 +345,6 @@ export default function ExploreScreen() {
   }, [router]);
 
 
-  const loading = categoriesLoading || productStatus === 'idle' || productStatus === 'loading';
-
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
       <Toast message={toastMessage} type={toastType} top={insets.top + 8} />
@@ -428,7 +400,20 @@ export default function ExploreScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}
       >
-        {/* Parent category tabs */}
+        {categoriesStatus === 'idle' || categoriesStatus === 'loading' ? (
+          <ScreenLoader
+            message="Loading categories..."
+            containerStyle={styles.messageContainer}
+          />
+        ) : categoriesStatus === 'failed' ? (
+          <ErrorState
+            title="Unable to load categories"
+            message={categoryError}
+            onRetry={() => getCategoriesHandler(true)}
+            containerStyle={styles.messageContainer}
+          />
+        ) : (
+        /* Parent category tabs */
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -479,6 +464,7 @@ export default function ExploreScreen() {
             );
           })}
         </ScrollView>
+        )}
 
         {/* Dynamic category heading */}
         <View style={styles.heading}>
@@ -692,29 +678,26 @@ export default function ExploreScreen() {
         </View>
 
         {/* Product grid */}
-        {loading ? (
-          <View style={styles.messageContainer}>
-            <ActivityIndicator size="large" color={SnitchColors.textPrimary} />
-            <Text style={styles.messageText}>Loading collection...</Text>
-          </View>
-        ) : categoryError ? (
-          <View style={styles.messageContainer}>
-            <Text style={styles.messageText}>{categoryError}</Text>
-          </View>
+        {productStatus === 'idle' || productStatus === 'loading' ? (
+          <ScreenLoader
+            message="Loading collection..."
+            containerStyle={styles.messageContainer}
+          />
         ) : productStatus === 'failed' ? (
-          <View style={styles.messageContainer}>
-            <Text style={styles.messageText}>
-              {productError || 'Unable to load products.'}
-            </Text>
-          </View>
+          <ErrorState
+            title="Unable to load products"
+            message={productError}
+            onRetry={() => getProductsHandler(true)}
+            containerStyle={styles.messageContainer}
+          />
         ) : filteredProducts.length === 0 ? (
-          <View style={styles.messageContainer}>
-            <SnitchIcon name="search_off" size={32} color={SnitchColors.textLight} />
-            <Text style={styles.messageTitle}>No products found</Text>
-            <Text style={styles.messageText}>
-              Try another category or search.
-            </Text>
-          </View>
+          <EmptyState
+            icon="search_off"
+            iconColor={SnitchColors.textLight}
+            title="No products found"
+            description="Try another category or search."
+            containerStyle={styles.messageContainer}
+          />
         ) : (
           <View style={styles.productGrid}>
             {filteredProducts.map((product) => (
@@ -730,7 +713,7 @@ export default function ExploreScreen() {
         )}
 
         {/* Editorial footer */}
-        {!loading && filteredProducts.length > 0 && (
+        {productStatus === 'succeeded' && filteredProducts.length > 0 && (
           <View style={styles.editorial}>
             <View style={styles.editorialDivider} />
             <Text style={styles.editorialEyebrow}>
@@ -1038,6 +1021,7 @@ const styles = StyleSheet.create({
   },
 
   messageContainer: {
+    flex: 0,
     minHeight: 220,
     alignItems: 'center',
     justifyContent: 'center',

@@ -1,6 +1,6 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { View, ScrollView, ActivityIndicator, Text } from 'react-native';
+import { View, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSelector } from 'react-redux';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -18,11 +18,13 @@ import ProductGrid from '@/features/Products/components/ProductGrid';
 import useProducts from '@/features/Products/hooks/useProducts';
 
 import Toast from '@/shared/components/Toast';
+import ScreenLoader from '@/shared/components/ScreenLoader';
+import ErrorState from '@/shared/components/ErrorState';
+import EmptyState from '@/shared/components/EmptyState';
 
 import useAuth from '@/features/Authentication/hooks/useAuth';
 
 import { styles } from '@/features/Home/styles/homeStyles';
-import { convertStackToolbarSpacerPropsToRNHeaderItem } from 'expo-router/build/layouts/stack-utils/toolbar/StackToolbarSpacer/index.js';
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
@@ -122,19 +124,22 @@ export default function HomeScreen() {
         />
 
         {loading ? (
-          <View style={{ paddingVertical: 40, alignItems: 'center' }}>
-            <ActivityIndicator size="large" />
-            <Text style={{ marginTop: 12 }}>Loading products...</Text>
-          </View>
+          <ScreenLoader
+            message="Loading products..."
+            containerStyle={{ flex: 0, paddingVertical: 40 }}
+          />
         ) : error ? (
-          <View style={{ paddingVertical: 40, alignItems: 'center' }}>
-            <Text>Unable to load products.</Text>
-            <Text style={{ marginTop: 6 }}>{error}</Text>
-          </View>
+          <ErrorState
+            title="Unable to load products"
+            message={error}
+            onRetry={() => getProductsHandler(true)}
+            containerStyle={{ flex: 0, paddingVertical: 40 }}
+          />
         ) : filteredProducts.length === 0 ? (
-          <View style={{ paddingVertical: 40, alignItems: 'center' }}>
-            <Text>No products found.</Text>
-          </View>
+          <EmptyState
+            title="No products found"
+            containerStyle={{ flex: 0, paddingVertical: 40 }}
+          />
         ) : (
           <ProductGrid
             products={filteredProducts}

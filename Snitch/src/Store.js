@@ -8,7 +8,11 @@ import orderReducer from './features/Order/states/orderSlice.js';
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { FLUSH, PAUSE, PERSIST, PURGE, REGISTER, REHYDRATE, persistReducer, persistStore } from "redux-persist";
 
-const cartPersistConfig = { key: "cart", storage: AsyncStorage };
+const cartPersistConfig = {
+    key: "cart",
+    storage: AsyncStorage,
+    blacklist: ["fetchStatus", "fetchError", "fetchRequestId"],
+};
 const WishListPersistConfig = { key: "wishList", storage: AsyncStorage };
 const customListsPersistConfig = { key: "customLists", storage: AsyncStorage };
 

@@ -30,21 +30,48 @@ const getProductId = (product) => {
     return product.id;
 };
 
+const applyCart = (state, cartResponse) => {
+    const cart = cartResponse?.cart;
+    state.cartItems = cart?.items;
+    state.subtotal = cart?.totalPrice.amount;
+    state.total = cart?.totalPrice.amount;
+    state.currency = cart?.totalPrice.currency;
+};
+
 const cartSlice = createSlice({
     name: 'cart',
     initialState: {
         cartItems: [],
         subtotal: 0,
         total: 0,
-        currency: 'INR'
+        currency: 'INR',
+        fetchStatus: 'idle',
+        fetchError: null,
+        fetchRequestId: null,
     },
     reducers: {
         setcartItems: (state, action) => {
-            const cart = action.payload.cart;
-            state.cartItems = cart.items;
-            state.subtotal = cart.totalPrice.amount;
-            state.total = cart.totalPrice.amount;
-            state.currency = cart.totalPrice.currency;
+            applyCart(state, action.payload);
+            if (state.fetchStatus === 'failed') {
+                state.fetchStatus = 'succeeded';
+                state.fetchError = null;
+            }
+        },
+        cartFetchStarted: (state, action) => {
+            state.fetchStatus = 'loading';
+            state.fetchError = null;
+            state.fetchRequestId = action.payload;
+        },
+        cartFetchSucceeded: (state, action) => {
+            if (state.fetchRequestId !== action.payload.requestId) return;
+            applyCart(state, action.payload.cartResponse);
+            state.fetchStatus = 'succeeded';
+            state.fetchError = null;
+        },
+        cartFetchFailed: (state, action) => {
+            if (state.fetchRequestId !== action.payload.requestId) return;
+            state.fetchStatus = 'failed';
+            state.fetchError = action.payload.error;
         },
 
         setSubtotal: (state, action) => {
@@ -113,12 +140,19 @@ const cartSlice = createSlice({
             state.cartItems = [];
             state.subtotal = 0;
             state.total = 0;
+            if (state.fetchStatus === 'failed') {
+                state.fetchStatus = 'succeeded';
+                state.fetchError = null;
+            }
         },
     }
 });
 
 export const {
     setcartItems,
+    cartFetchStarted,
+    cartFetchSucceeded,
+    cartFetchFailed,
     setSubtotal,
     settotal,
     setCurrency,

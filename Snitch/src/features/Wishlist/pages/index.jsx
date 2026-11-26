@@ -19,6 +19,7 @@ import SnitchHeader from '@/shared/components/SnitchHeader';
 import useWishList from '@/features/Wishlist/hooks/useWishList';
 import useCustomLists from '@/features/Wishlist/hooks/useCustomLists';
 import Toast from '@/shared/components/Toast';
+import EmptyState from '@/shared/components/EmptyState';
 
 const getProductId = (product) => product?.id ?? product?._id;
 
@@ -205,18 +206,20 @@ export default function WishlistScreen() {
 
       {/* ── Empty state ── */}
       {wishListItems.length === 0 ? (
-        <View style={styles.emptyState}>
-          <View style={styles.emptyIcon}>
-            <SnitchIcon name="favorite_border" size={34} color={SnitchColors.secondaryMuted} />
-          </View>
-          <Text style={styles.emptyTitle}>Your wishlist is empty</Text>
-          <Text style={styles.emptySubtitle}>
-            Save the pieces you love and they will be waiting here.
-          </Text>
-          <Pressable style={styles.exploreButton} onPress={() => router.push('/')}>
-            <Text style={styles.exploreButtonText}>EXPLORE COLLECTION</Text>
-          </Pressable>
-        </View>
+        <EmptyState
+          icon="favorite_border"
+          iconColor={SnitchColors.secondaryMuted}
+          title="Your wishlist is empty"
+          description="Save the pieces you love and they will be waiting here."
+          actionLabel="EXPLORE COLLECTION"
+          onAction={() => router.push('/')}
+          containerStyle={styles.emptyState}
+          iconContainerStyle={styles.emptyIcon}
+          titleStyle={styles.emptyTitle}
+          descriptionStyle={styles.emptySubtitle}
+          actionStyle={styles.exploreButton}
+          actionTextStyle={styles.exploreButtonText}
+        />
       ) : (
         <>
           {/* ── Toolbar ── */}
@@ -366,37 +369,29 @@ export default function WishlistScreen() {
                 />
               ))
             ) : (
-              <View style={styles.noResults}>
-                {activeCustomList ? (
-                  <>
-                    <SnitchIcon
-                      name="playlist_add"
-                      size={32}
-                      color={SnitchColors.textLight}
-                    />
-                    <Text style={styles.noResultsTitle}>
-                      This list is empty
-                    </Text>
-                    <Text style={styles.noResultsSubtitle}>
-                      Tap Edit to add items from your wishlist.
-                    </Text>
-                    <Pressable
-                      style={styles.addItemsButton}
-                      onPress={() => setAddToListTarget(activeCustomList)}
-                    >
-                      <SnitchIcon name="add" size={16} color={SnitchColors.onPrimary} />
-                      <Text style={styles.addItemsButtonText}>Add Items</Text>
-                    </Pressable>
-                  </>
-                ) : (
-                  <>
-                    <Text style={styles.noResultsTitle}>Nothing in stock right now</Text>
-                    <Text style={styles.noResultsSubtitle}>
-                      Your saved out-of-stock pieces will stay in your wishlist.
-                    </Text>
-                  </>
-                )}
-              </View>
+              <EmptyState
+                icon={activeCustomList ? 'playlist_add' : null}
+                iconColor={SnitchColors.textLight}
+                showIconContainer={false}
+                title={activeCustomList ? 'This list is empty' : 'Nothing in stock right now'}
+                description={
+                  activeCustomList
+                    ? 'Tap Edit to add items from your wishlist.'
+                    : 'Your saved out-of-stock pieces will stay in your wishlist.'
+                }
+                actionLabel={activeCustomList ? 'Add Items' : undefined}
+                actionIcon={activeCustomList ? 'add' : undefined}
+                onAction={
+                  activeCustomList
+                    ? () => setAddToListTarget(activeCustomList)
+                    : undefined
+                }
+                containerStyle={styles.noResults}
+                titleStyle={styles.noResultsTitle}
+                descriptionStyle={styles.noResultsSubtitle}
+                actionStyle={styles.addItemsButton}
+                actionTextStyle={styles.addItemsButtonText}
+              />
             )}
           </ScrollView>
         </>
@@ -568,6 +563,7 @@ const styles = StyleSheet.create({
     color: SnitchColors.onPrimary,
   },
   noResults: {
+    flex: 0,
     alignItems: 'center',
     paddingVertical: SnitchSpacing.xxl,
     paddingHorizontal: SnitchSpacing.xl,

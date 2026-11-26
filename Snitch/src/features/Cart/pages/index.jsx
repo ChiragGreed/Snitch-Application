@@ -15,7 +15,9 @@ import useCart from '@/features/Cart/hooks/useCart';
 import useWishList from '@/features/Wishlist/hooks/useWishList';
 
 import Toast from '@/shared/components/Toast';
-import { SnitchIcon } from '@/components/snitch-icon';
+import ScreenLoader from '@/shared/components/ScreenLoader';
+import ErrorState from '@/shared/components/ErrorState';
+import EmptyState from '@/shared/components/EmptyState';
 import { SnitchColors } from '@/constants/snitch-theme';
 import { styles } from '@/features/Cart/styles/cartStyles';
 
@@ -28,7 +30,15 @@ export default function CartScreen() {
   const { addToListHandler } = useWishList();
 
   // Read exclusively from Redux cart state
-  const { cartItems, subtotal, total, currency = 'INR' } = useSelector((state) => state.cart);
+  const {
+    cartItems,
+    subtotal,
+    total,
+    currency = 'INR',
+    fetchStatus,
+    fetchError,
+  } = useSelector((state) => state.cart);
+  const user = useSelector((state) => state.auth.User);
   const [toastMessage, setToastMessage] = useState(null);
   const [toastType, setToastType] = useState('default');
 
@@ -50,6 +60,11 @@ export default function CartScreen() {
   const itemCount = useMemo(() => {
     return items.reduce((acc, item) => acc + (item.quantity || 1), 0);
   }, [items]);
+
+  const isInitialFetch = Boolean(user) && fetchStatus === 'idle';
+  const isLoadingWithoutItems =
+    items.length === 0 && (isInitialFetch || fetchStatus === 'loading');
+  const isErrorWithoutItems = items.length === 0 && fetchStatus === 'failed';
 
   useEffect(() => {
     getCartItemsHandler();
@@ -124,24 +139,30 @@ export default function CartScreen() {
         onProfile={() => router.push('/profile')}
       />
 
-      {items.length === 0 ? (
+      {isLoadingWithoutItems ? (
+        <ScreenLoader message="Loading your bag..." />
+      ) : isErrorWithoutItems ? (
+        <ErrorState
+          title="Unable to load your bag"
+          message={fetchError}
+          onRetry={getCartItemsHandler}
+        />
+      ) : items.length === 0 ? (
         /* Empty Cart State */
-        <ScrollView
-          style={styles.scroll}
-          contentContainerStyle={styles.emptyContainer}
-          showsVerticalScrollIndicator={false}
-        >
-          <View style={styles.emptyIconContainer}>
-            <SnitchIcon name="shopping_bag" size={38} color={SnitchColors.textMuted} />
-          </View>
-          <Text style={styles.emptyTitle}>Your Shopping Bag is Empty</Text>
-          <Text style={styles.emptySubtitle}>
-            Explore our latest editorial drops and elevate your contemporary wardrobe.
-          </Text>
-          <Pressable style={styles.exploreBtn} onPress={handleExploreMore}>
-            <Text style={styles.exploreBtnText}>EXPLORE DROPS</Text>
-          </Pressable>
-        </ScrollView>
+        <EmptyState
+          icon="shopping_bag"
+          iconColor={SnitchColors.textMuted}
+          title="Your Shopping Bag is Empty"
+          description="Explore our latest editorial drops and elevate your contemporary wardrobe."
+          actionLabel="EXPLORE DROPS"
+          onAction={handleExploreMore}
+          containerStyle={styles.emptyContainer}
+          iconContainerStyle={styles.emptyIconContainer}
+          titleStyle={styles.emptyTitle}
+          descriptionStyle={styles.emptySubtitle}
+          actionStyle={styles.exploreBtn}
+          actionTextStyle={styles.exploreBtnText}
+        />
       ) : (
         /* Active Cart Flow from Redux State */
         <ScrollView
@@ -149,6 +170,20 @@ export default function CartScreen() {
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
+          {fetchStatus === 'loading' ? (
+            <ScreenLoader
+              message="Refreshing your bag..."
+              containerStyle={{ flex: 0, paddingVertical: 12 }}
+            />
+          ) : fetchStatus === 'failed' ? (
+            <ErrorState
+              title="Unable to refresh your bag"
+              message={fetchError}
+              onRetry={getCartItemsHandler}
+              containerStyle={{ flex: 0, paddingVertical: 12 }}
+            />
+          ) : null}
+
           {/* Title & Count Meta Indicator */}
           <View style={styles.titleSection}>
             <View style={styles.titleLeft}>
