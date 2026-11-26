@@ -991,7 +991,7 @@ export default function ProductDetailScreen({ product, onAddToCart, onBuyNow, on
               !canPurchase && styles.disabledButton,
             ]}
             disabled={!canPurchase}
-            onPress={onBuyNow}
+            onPress={() => onBuyNow?.(product, selectedVariant)}
           >
             <Text style={styles.buyNowText}>
               BUY NOW

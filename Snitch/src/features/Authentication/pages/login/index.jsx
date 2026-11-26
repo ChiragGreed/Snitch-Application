@@ -24,6 +24,9 @@ export default function LoginScreen() {
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [rememberMe, setRememberMe] = useState(false);
+    const [showForgotPassword, setShowForgotPassword] = useState(false);
+    const [resetEmail, setResetEmail] = useState('');
+    const [emailSent, setEmailSent] = useState(false);
     const router = useRouter();
     const { returnTo } = useLocalSearchParams();
 
@@ -109,103 +112,228 @@ export default function LoginScreen() {
                     {/* Handle */}
                     <View style={styles.handle} />
 
-                    {/* Title */}
-                    <View style={styles.titleBlock}>
-                        <Text style={styles.sheetTitle}>Login</Text>
-                        <View style={styles.sheetSubtitleRow}>
-                            <Text style={styles.sheetSubtitle}>Don't have an account?</Text>
-                            <Pressable onPress={() => router.push('/auth/register')}>
-                                <Text style={styles.linkText}>Sign Up</Text>
-                            </Pressable>
-                        </View>
-                    </View>
+                    {showForgotPassword ? (
+                        /* ── Forgot Password Content ── */
+                        <>
+                            {emailSent ? (
+                                /* ── Email Sent Success ── */
+                                <View style={styles.emailSentContainer}>
 
-                    {/* Form */}
-                    <View style={styles.form}>
-                        {/* Email */}
-                        <View style={styles.inputRow}>
-                            <SnitchIcon name="mail" size={20} color={SnitchColors.textMuted} />
-                            <TextInput
-                                style={styles.input}
-                                placeholder="Enter your email address"
-                                placeholderTextColor={SnitchColors.textLight}
-                                value={email}
-                                onChangeText={setEmail}
-                                keyboardType="email-address"
-                                autoCapitalize="none"
-                                selectionColor={SnitchColors.secondaryMuted}
-                            />
-                        </View>
+                                    {/* Check icon ring */}
+                                    <View style={styles.emailSentIconRing}>
+                                        <SnitchIcon name="check" size={30} color={SnitchColors.secondaryMuted} />
+                                    </View>
 
-                        {/* Password */}
-                        <View style={styles.inputRow}>
-                            <SnitchIcon name="lock" size={20} color={SnitchColors.textMuted} />
-                            <TextInput
-                                style={[styles.input, { flex: 1 }]}
-                                placeholder="Password"
-                                placeholderTextColor={SnitchColors.textLight}
-                                value={password}
-                                onChangeText={setPassword}
-                                secureTextEntry={!showPassword}
-                                selectionColor={SnitchColors.secondaryMuted}
-                            />
-                            <Pressable
-                                hitSlop={8}
-                                onPress={() => setShowPassword((v) => !v)}
-                                accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
-                            >
-                                <SnitchIcon
-                                    name={showPassword ? 'visibility_off' : 'visibility'}
-                                    size={19}
-                                    color={SnitchColors.textMuted}
-                                />
-                            </Pressable>
-                        </View>
+                                    {/* Title */}
+                                    <View style={styles.titleBlock}>
+                                        <Text style={styles.sheetTitle}>Check your email</Text>
+                                    </View>
 
-                        {/* Remember me & Forgot */}
-                        <View style={styles.rememberRow}>
-                            <Pressable
-                                style={styles.checkboxRow}
-                                onPress={() => setRememberMe((v) => !v)}
-                                accessibilityRole="checkbox"
-                                accessibilityState={{ checked: rememberMe }}
-                            >
-                                <View style={[styles.checkbox, rememberMe && styles.checkboxChecked]}>
-                                    {rememberMe && (
-                                        <SnitchIcon name="check" size={12} color={SnitchColors.onPrimary} />
-                                    )}
+                                    {/* Sent-to message */}
+                                    <View style={styles.emailSentBodyBlock}>
+                                        <Text style={styles.emailSentBody}>
+                                            We've sent a password reset link to
+                                        </Text>
+                                        <Text style={styles.emailSentAddress}>{resetEmail}</Text>
+                                    </View>
+
+                                    {/* Spam hint */}
+                                    <Text style={styles.emailSentHint}>
+                                        Check your spam folder if you don't see it in the next few minutes.
+                                    </Text>
+
+                                    {/* Spacer */}
+                                    <View style={styles.emailSentSpacer} />
+
+                                    {/* Back to sign in CTA */}
+                                    <Pressable
+                                        style={styles.ctaButton}
+                                        onPress={() => {
+                                            setShowForgotPassword(false);
+                                            setEmailSent(false);
+                                            setResetEmail('');
+                                        }}
+                                        accessibilityRole="button"
+                                    >
+                                        <Text style={styles.ctaButtonText}>BACK TO SIGN IN</Text>
+                                    </Pressable>
+
+                                    {/* Try again */}
+                                    <View style={[styles.sheetSubtitleRow, { justifyContent: 'center' }]}>
+                                        <Text style={styles.sheetSubtitle}>Didn't receive the email?</Text>
+                                        <Pressable hitSlop={6} onPress={() => setEmailSent(false)}>
+                                            <Text style={styles.linkText}>Try again</Text>
+                                        </Pressable>
+                                    </View>
+
                                 </View>
-                                <Text style={styles.rememberText}>Remember Me</Text>
+                            ) : (
+                                /* ── Forgot Password Form ── */
+                                <>
+                                    {/* Back button */}
+                                    <Pressable
+                                        style={styles.forgotBackRow}
+                                        onPress={() => setShowForgotPassword(false)}
+                                        hitSlop={8}
+                                    >
+                                        <SnitchIcon name="arrow_back" size={16} color={SnitchColors.secondaryMuted} />
+                                        <Text style={styles.linkText}>Back to Sign In</Text>
+                                    </Pressable>
+
+                                    {/* Title */}
+                                    <View style={styles.forgotTitleBlock}>
+                                        <Text style={styles.sheetTitle}>Reset Password</Text>
+                                        <Text style={styles.sheetSubtitle}>
+                                            Enter your email address and we'll send you a link to reset your password.
+                                        </Text>
+                                    </View>
+
+                                    {/* Email field */}
+                                    <View style={styles.forgotFieldGroup}>
+                                        <Text style={styles.forgotFieldLabel}>EMAIL ADDRESS</Text>
+                                        <View style={styles.inputRow}>
+                                            <SnitchIcon name="mail" size={20} color={SnitchColors.textMuted} />
+                                            <TextInput
+                                                style={styles.input}
+                                                placeholder="hello@example.com"
+                                                placeholderTextColor={SnitchColors.textLight}
+                                                value={resetEmail}
+                                                onChangeText={setResetEmail}
+                                                keyboardType="email-address"
+                                                autoCapitalize="none"
+                                                selectionColor={SnitchColors.secondaryMuted}
+                                            />
+                                        </View>
+                                    </View>
+
+                                    {/* Send CTA */}
+                                    <Pressable
+                                        style={styles.ctaButton}
+                                        accessibilityRole="button"
+                                        onPress={() => setEmailSent(true)}
+                                    >
+                                        <Text style={styles.ctaButtonText}>RECEIVE EMAIL</Text>
+                                    </Pressable>
+
+                                    {/* Divider */}
+                                    <View style={styles.dividerRow}>
+                                        <View style={styles.dividerLine} />
+                                        <Text style={styles.dividerText}>or</Text>
+                                        <View style={styles.dividerLine} />
+                                    </View>
+
+                                    {/* Sign in link */}
+                                    <View style={[styles.sheetSubtitleRow, { justifyContent: 'center' }]}>
+                                        <Text style={styles.sheetSubtitle}>Remember your password?</Text>
+                                        <Pressable hitSlop={6} onPress={() => setShowForgotPassword(false)}>
+                                            <Text style={styles.linkText}>Sign In</Text>
+                                        </Pressable>
+                                    </View>
+                                </>
+                            )}
+                        </>
+                    ) : (
+                        /* ── Login Content ── */
+                        <>
+                            {/* Title */}
+                            <View style={styles.titleBlock}>
+                                <Text style={styles.sheetTitle}>Login</Text>
+                                <View style={styles.sheetSubtitleRow}>
+                                    <Text style={styles.sheetSubtitle}>Don't have an account?</Text>
+                                    <Pressable onPress={() => router.push('/auth/register')}>
+                                        <Text style={styles.linkText}>Sign Up</Text>
+                                    </Pressable>
+                                </View>
+                            </View>
+
+                            {/* Form */}
+                            <View style={styles.form}>
+                                {/* Email */}
+                                <View style={styles.inputRow}>
+                                    <SnitchIcon name="mail" size={20} color={SnitchColors.textMuted} />
+                                    <TextInput
+                                        style={styles.input}
+                                        placeholder="Enter your email address"
+                                        placeholderTextColor={SnitchColors.textLight}
+                                        value={email}
+                                        onChangeText={setEmail}
+                                        keyboardType="email-address"
+                                        autoCapitalize="none"
+                                        selectionColor={SnitchColors.secondaryMuted}
+                                    />
+                                </View>
+
+                                {/* Password */}
+                                <View style={styles.inputRow}>
+                                    <SnitchIcon name="lock" size={20} color={SnitchColors.textMuted} />
+                                    <TextInput
+                                        style={[styles.input, { flex: 1 }]}
+                                        placeholder="Password"
+                                        placeholderTextColor={SnitchColors.textLight}
+                                        value={password}
+                                        onChangeText={setPassword}
+                                        secureTextEntry={!showPassword}
+                                        selectionColor={SnitchColors.secondaryMuted}
+                                    />
+                                    <Pressable
+                                        hitSlop={8}
+                                        onPress={() => setShowPassword((v) => !v)}
+                                        accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
+                                    >
+                                        <SnitchIcon
+                                            name={showPassword ? 'visibility_off' : 'visibility'}
+                                            size={19}
+                                            color={SnitchColors.textMuted}
+                                        />
+                                    </Pressable>
+                                </View>
+
+                                {/* Remember me & Forgot */}
+                                <View style={styles.rememberRow}>
+                                    <Pressable
+                                        style={styles.checkboxRow}
+                                        onPress={() => setRememberMe((v) => !v)}
+                                        accessibilityRole="checkbox"
+                                        accessibilityState={{ checked: rememberMe }}
+                                    >
+                                        <View style={[styles.checkbox, rememberMe && styles.checkboxChecked]}>
+                                            {rememberMe && (
+                                                <SnitchIcon name="check" size={12} color={SnitchColors.onPrimary} />
+                                            )}
+                                        </View>
+                                        <Text style={styles.rememberText}>Remember Me</Text>
+                                    </Pressable>
+                                    <Pressable hitSlop={6} onPress={() => setShowForgotPassword(true)}>
+                                        <Text style={styles.linkText}>Forgot Password?</Text>
+                                    </Pressable>
+                                </View>
+
+                                {/* Login CTA */}
+                                <Pressable style={styles.ctaButton} onPress={login} accessibilityRole="button">
+                                    <Text style={styles.ctaButtonText}>LOGIN</Text>
+                                </Pressable>
+                            </View>
+
+                            {/* Divider */}
+                            <View style={styles.dividerRow}>
+                                <View style={styles.dividerLine} />
+                                <Text style={styles.dividerText}>Or Continue With</Text>
+                                <View style={styles.dividerLine} />
+                            </View>
+
+                            {/* Google Sign In */}
+                            <Pressable style={styles.socialButton} onPress={googleAuthPress} accessibilityRole="button" accessibilityLabel="Continue with Google">
+                                <GoogleIcon />
+                                <Text style={styles.socialButtonText}>Continue with Google</Text>
                             </Pressable>
-                            <Pressable hitSlop={6}>
-                                <Text style={styles.linkText}>Forgot Password?</Text>
-                            </Pressable>
-                        </View>
 
-                        {/* Login CTA */}
-                        <Pressable style={styles.ctaButton} onPress={login} accessibilityRole="button">
-                            <Text style={styles.ctaButtonText}>LOGIN</Text>
-                        </Pressable>
-                    </View>
-
-                    {/* Divider */}
-                    <View style={styles.dividerRow}>
-                        <View style={styles.dividerLine} />
-                        <Text style={styles.dividerText}>Or Continue With</Text>
-                        <View style={styles.dividerLine} />
-                    </View>
-
-                    {/* Google Sign In */}
-                    <Pressable style={styles.socialButton} onPress={googleAuthPress} accessibilityRole="button" accessibilityLabel="Continue with Google">
-                        <GoogleIcon />
-                        <Text style={styles.socialButtonText}>Continue with Google</Text>
-                    </Pressable>
-
-                    {/* Security note */}
-                    <View style={styles.securityRow}>
-                        <SnitchIcon name="lock" size={13} color={SnitchColors.secondaryMuted} />
-                        <Text style={styles.securityText}>256-bit Encrypted Secure Access</Text>
-                    </View>
+                            {/* Security note */}
+                            <View style={styles.securityRow}>
+                                <SnitchIcon name="lock" size={13} color={SnitchColors.secondaryMuted} />
+                                <Text style={styles.securityText}>256-bit Encrypted Secure Access</Text>
+                            </View>
+                        </>
+                    )}
                 </ScrollView>
             </KeyboardAvoidingView>
         </View>
@@ -340,6 +468,73 @@ const pageStyles = StyleSheet.create({
     securityText: {
         fontSize: 10,
         color: SnitchColors.textLight,
+    },
+
+    // ── Forgot Password ────────────────────────────────────────────────
+    forgotBackRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: SnitchSpacing.xs,
+    },
+    forgotTitleBlock: {
+        gap: SnitchSpacing.xs,
+        marginBottom: SnitchSpacing.xl,
+    },
+    forgotFieldGroup: {
+        gap: SnitchSpacing.sm,
+    },
+    forgotFieldLabel: {
+        fontSize: 10,
+        fontWeight: '600',
+        letterSpacing: 1.5,
+        color: SnitchColors.textLight,
+        textTransform: 'uppercase',
+    },
+
+    // ── Email Sent Success ─────────────────────────────────────────────
+    emailSentContainer: {
+        flex: 1,
+        width: '100%',
+        paddingVertical: SnitchSpacing.xxl,
+        gap: 0,
+    },
+    emailSentIconRing: {
+        width: 80,
+        height: 80,
+        borderRadius: SnitchRadius.full,
+        backgroundColor: SnitchColors.surfaceContainer,
+        alignItems: 'center',
+        justifyContent: 'center',
+        alignSelf: 'center',
+        marginBottom: SnitchSpacing.xxl,
+    },
+    emailSentBodyBlock: {
+        alignItems: 'center',
+        marginBottom: SnitchSpacing.lg,
+        gap: SnitchSpacing.xs,
+    },
+    emailSentBody: {
+        fontSize: 13,
+        color: SnitchColors.textMuted,
+        textAlign: 'center',
+        lineHeight: 20,
+    },
+    emailSentAddress: {
+        fontSize: 14,
+        fontWeight: '700',
+        color: SnitchColors.textPrimary,
+        textAlign: 'center',
+    },
+    emailSentHint: {
+        fontSize: 12,
+        color: SnitchColors.textLight,
+        textAlign: 'center',
+        lineHeight: 18,
+        paddingHorizontal: SnitchSpacing.xl,
+        marginBottom: SnitchSpacing.xxl,
+    },
+    emailSentSpacer: {
+        flex: 1,
     },
 });
 

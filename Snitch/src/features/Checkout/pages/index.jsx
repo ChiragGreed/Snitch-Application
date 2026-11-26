@@ -248,9 +248,8 @@ export default function CheckoutScreen() {
       triggerToast('Your bag is empty');
       return;
     }
-    checkoutHandler();
     triggerToast('Opening Secure Payment Gateway...', 'success');
-    // TODO: Integrate Razorpay / payment gateway here
+    checkoutHandler();
   }, [checkoutHandler, items.length, triggerToast]);
 
   if (!authChecked || !isLoggedIn) {

@@ -22,6 +22,7 @@ export default function ProductDetailPage() {
 
   const product = useSelector((state) => state.products.Product);
   const productDetails = useSelector((state) => state.products.productDetails);
+  const user = useSelector((state) => state.auth.User);
   const [toastEvent, setToastEvent] = useState({ id: 0, message: null, type: 'default' });
 
   useEffect(() => {
@@ -51,9 +52,19 @@ export default function ProductDetailPage() {
     }
   }, [addToCartHandler, showToast]);
 
-  const handleBuyNow = useCallback(() => {
-    showToast('Please sign in to continue with Buy Now.', 'warning');
-  }, [showToast]);
+  const handleBuyNow = useCallback(async (p, variant) => {
+    if (!user) {
+      showToast('Please sign in to continue with Buy Now.', 'warning');
+      return;
+    }
+
+    try {
+      const added = await addToCartHandler(p, variant);
+      if (added) showToast('Buy Now is unavailable. Item added to your bag.', 'success');
+    } catch {
+      showToast('Unable to add to bag. Please try again.', 'warning');
+    }
+  }, [addToCartHandler, showToast, user]);
 
   if (!productId) {
     return <ErrorState title="Product not found" message="This product is unavailable." />;
