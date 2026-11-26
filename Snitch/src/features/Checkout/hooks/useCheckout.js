@@ -111,7 +111,11 @@ export default function useCheckout() {
             // 5. Clear local cart
             dispatch(clearCart());
 
-            router.replace('/orders/orderConfirmation');
+            const orderId = orderResponse.order?._id;
+            router.replace({
+                pathname: '/orders/orderConfirmation',
+                params: orderId ? { orderId: String(orderId) } : {},
+            });
 
         } catch (error) {
             console.log('Checkout error:', error?.response?.data || error?.message || error);

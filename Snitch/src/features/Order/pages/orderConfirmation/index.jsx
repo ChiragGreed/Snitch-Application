@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { View, Text, ScrollView, Pressable } from 'react-native';
 import { Image } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSelector } from 'react-redux';
 
 import { SnitchIcon } from '@/components/snitch-icon';
@@ -32,9 +32,9 @@ const getSafePrice = (item) => {
 // ─── Status-to-timeline mapping ───────────────────────────────────────────────
 // Steps always shown — progress depends on order.status
 const TIMELINE_STEPS = [
-  { key: 'placed',    label: 'Order Confirmed',   sub: 'Your order has been received' },
-  { key: 'shipped',   label: 'Shipped',            sub: 'On the way to your address' },
-  { key: 'delivered', label: 'Delivered',          sub: 'Successfully handed over' },
+  { key: 'placed', label: 'Order Confirmed', sub: 'Your order has been received' },
+  { key: 'shipped', label: 'Shipped', sub: 'On the way to your address' },
+  { key: 'delivered', label: 'Delivered', sub: 'Successfully handed over' },
 ];
 const STATUS_ORDER = ['placed', 'shipped', 'delivered'];
 
@@ -114,19 +114,23 @@ function TimelineStep({ step, isActive, isLast }) {
 export default function OrderConfirmationScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { orderId: confirmationOrderId } = useLocalSearchParams();
 
   // ── Real data from Redux ──
   const User = useSelector((state) => state.auth.User);
   const orderDets = useSelector((state) => state.order.orderDets);
 
-  // Handle both single order object and array — take the most recent
+  const requestedOrderId = Array.isArray(confirmationOrderId)
+    ? confirmationOrderId[0]
+    : confirmationOrderId;
+
   const order = useMemo(() => {
-    if (!orderDets) return null;
+    if (!requestedOrderId) return null;
     if (Array.isArray(orderDets)) {
-      return orderDets.length > 0 ? orderDets[orderDets.length - 1] : null;
+      return orderDets.find((candidate) => String(candidate?._id) === requestedOrderId) ?? null;
     }
-    return orderDets;
-  }, [orderDets]);
+    return String(orderDets?._id) === requestedOrderId ? orderDets : null;
+  }, [orderDets, requestedOrderId]);
 
   // ── Derived values ──
   const userName = User?.fullname || User?.fullName || User?.name || 'there';
@@ -137,9 +141,7 @@ export default function OrderConfirmationScreen() {
     return raw.length >= 8 ? `#${raw.slice(-8).toUpperCase()}` : raw ? `#${raw.toUpperCase()}` : '—';
   }, [order]);
 
-  const items = useMemo(() => {
-    return Array.isArray(order?.items) ? order.items : [];
-  }, [order]);
+  const items = useMemo(() => Array.isArray(order?.items) ? order.items : [], [order]);
 
   const itemCount = items.reduce((acc, i) => acc + (i.quantity ?? 1), 0);
 
