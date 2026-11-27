@@ -40,6 +40,15 @@ const SF_MAPPING: Record<string, string> = {
   published_with_changes: 'arrow.triangle.2.circlepath',
   check_circle: 'checkmark.circle.fill',
   warning: 'exclamationmark.triangle.fill',
+  edit: 'pencil',
+  apartment: 'building.2',
+  radio_button_unchecked: 'circle',
+  my_location: 'location',
+  location_searching: 'location',
+  signpost: 'signpost.right',
+  storefront: 'storefront',
+  near_me: 'location.north.fill',
+  call: 'phone',
 };
 
 const UNICODE_FALLBACK: Record<string, string> = {
@@ -80,6 +89,15 @@ const UNICODE_FALLBACK: Record<string, string> = {
   published_with_changes: '↺',
   check_circle: '✓',
   warning: '⚠',
+  edit: '✎',
+  apartment: '🏢',
+  radio_button_unchecked: '○',
+  my_location: '⌖',
+  location_searching: '⌖',
+  signpost: '🚏',
+  storefront: '🏪',
+  near_me: '↗',
+  call: '📞',
 };
 
 interface SnitchIconProps {

@@ -221,6 +221,104 @@ export const styles = StyleSheet.create({
     color: SnitchColors.textSecondary,
     marginTop: 2,
   },
+  addressEmpty: {
+    gap: SnitchSpacing.xs,
+    marginTop: SnitchSpacing.sm,
+  },
+  addressEmptyText: {
+    fontSize: 13,
+    color: SnitchColors.textMuted,
+  },
+  addressEmptyAction: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: SnitchColors.secondary,
+  },
+  addressPickerOverlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(18, 18, 18, 0.45)',
+  },
+  addressPickerSheet: {
+    maxHeight: '75%',
+    backgroundColor: SnitchColors.surfaceCard,
+    borderTopLeftRadius: SnitchRadius.xl,
+    borderTopRightRadius: SnitchRadius.xl,
+    paddingHorizontal: SnitchSpacing.gutter,
+    paddingTop: SnitchSpacing.md,
+    paddingBottom: 28,
+  },
+  addressPickerHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingBottom: SnitchSpacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: SnitchColors.border,
+  },
+  addressPickerTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: SnitchColors.textPrimary,
+  },
+  addressPickerClose: {
+    width: 34,
+    height: 34,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: SnitchRadius.full,
+    backgroundColor: SnitchColors.surfaceContainerLow,
+  },
+  addressPickerList: {
+    gap: SnitchSpacing.sm,
+    paddingTop: SnitchSpacing.md,
+    paddingBottom: SnitchSpacing.sm,
+  },
+  addressOption: {
+    gap: 6,
+    padding: SnitchSpacing.md,
+    borderRadius: SnitchRadius.md,
+    borderWidth: 1,
+    borderColor: SnitchColors.border,
+    backgroundColor: SnitchColors.surfaceCard,
+  },
+  addressOptionSelected: {
+    borderColor: SnitchColors.primary,
+    backgroundColor: SnitchColors.surfaceContainerLow,
+  },
+  addressOptionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  addressOptionLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: SnitchColors.textPrimary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.7,
+  },
+  addressOptionText: {
+    fontSize: 13,
+    lineHeight: 19,
+    color: SnitchColors.textSecondary,
+  },
+  addressPickerEmpty: {
+    alignItems: 'center',
+    gap: SnitchSpacing.md,
+    paddingVertical: SnitchSpacing.xl,
+  },
+  addressPickerAddButton: {
+    paddingHorizontal: SnitchSpacing.lg,
+    paddingVertical: SnitchSpacing.sm,
+    borderRadius: SnitchRadius.full,
+    backgroundColor: SnitchColors.primary,
+  },
+  addressPickerAddButtonText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: SnitchColors.onPrimary,
+  },
 
   // ─── Delivery Speed ──────────────────────────────────────────────────────────
   deliveryOption: {

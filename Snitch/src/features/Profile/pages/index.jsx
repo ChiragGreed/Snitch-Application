@@ -81,7 +81,7 @@ export default function ProfileScreen() {
 
   const handleAccountFeature = useCallback(() => {
     if (hasUser) {
-      triggerToast('This feature will be available soon.');
+      router.push('/address/savedAddresses');
       return;
     }
 

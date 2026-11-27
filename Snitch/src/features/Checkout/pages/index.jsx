@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useCallback, useEffect } from 'react';
-import { View, Text, ScrollView, Pressable, Platform } from 'react-native';
+import { View, Text, ScrollView, Pressable, Platform, Modal } from 'react-native';
 import { Image } from 'expo-image';
 import { useSelector } from 'react-redux';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -10,6 +10,7 @@ import { SnitchColors } from '@/constants/snitch-theme';
 import Toast from '@/shared/components/Toast';
 import { styles } from '@/features/Checkout/styles/checkoutStyles';
 import useAuth from '@/features/Authentication/hooks/useAuth';
+import useAddress from '@/features/Address/hooks/useAddress';
 import useCheckout from '../hooks/useCheckout';
 
 // ─── Delivery Options ─────────────────────────────────────────────────────────
@@ -169,8 +170,16 @@ export default function CheckoutScreen() {
   const User = useSelector((state) => state.auth.User);
   const { checkoutHandler } = useCheckout();
   const { protectedRouteHandler } = useAuth();
+  const {
+    myAddresses,
+    defaultAddressId,
+    getMyAddressesHandler,
+    setDefaultAddressHandler,
+    loading: addressesLoading,
+  } = useAddress();
   const [authChecked, setAuthChecked] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isAddressPickerVisible, setIsAddressPickerVisible] = useState(false);
 
   const [selectedDelivery, setSelectedDelivery] = useState('standard');
   const [toastMessage, setToastMessage] = useState(null);
@@ -204,6 +213,22 @@ export default function CheckoutScreen() {
   }, [selectedDelivery]);
 
   const totalPayable = displayTotal + deliveryCharge;
+  const addressList = Array.isArray(myAddresses) ? myAddresses : [];
+  const selectedDeliveryAddress = addressList.find(
+    (savedAddress) => savedAddress?._id === defaultAddressId
+  ) || addressList[0] || null;
+  const deliveryAddressDetails = selectedDeliveryAddress?.address || {};
+  const deliveryAddressText = [
+    deliveryAddressDetails.residence,
+    deliveryAddressDetails.area,
+    deliveryAddressDetails.LandMark ? `Near ${deliveryAddressDetails.LandMark}` : null,
+    [deliveryAddressDetails.city, deliveryAddressDetails.state]
+      .filter(Boolean)
+      .join(', '),
+    deliveryAddressDetails.pin,
+  ]
+    .filter(Boolean)
+    .join(', ');
 
   useEffect(() => {
     let active = true;
@@ -229,11 +254,23 @@ export default function CheckoutScreen() {
     }
   }, [authChecked, isLoggedIn, router]);
 
-  // ── Computed GST (included, 12% approx)
-  const gstAmount = useMemo(
-    () => Math.round(displayTotal * 0.12),
-    [displayTotal]
-  );
+  useEffect(() => {
+    if (!authChecked || !isLoggedIn) {
+      return undefined;
+    }
+
+    let active = true;
+    getMyAddressesHandler()
+      .catch((error) => {
+        if (active) {
+          triggerToast(error.message || 'Unable to load your saved addresses');
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [authChecked, getMyAddressesHandler, isLoggedIn, triggerToast]);
 
   const handleBack = useCallback(() => {
     router.back();
@@ -336,26 +373,49 @@ export default function CheckoutScreen() {
             </View>
             <Pressable
               style={styles.addressChangBtn}
-              onPress={() => triggerToast('Address management coming soon')}
+              onPress={() => setIsAddressPickerVisible(true)}
               accessibilityLabel="Change address"
             >
               <Text style={styles.addressChangeText}>Change</Text>
             </Pressable>
           </View>
 
-          <View style={styles.addressNameRow}>
-            <Text style={styles.addressName}>
-              {User?.fullname || User?.fullName || User?.name || 'Customer'}
-            </Text>
-            <View style={styles.addressTypeBadge}>
-              <Text style={styles.addressTypeBadgeText}>HOME</Text>
+          {selectedDeliveryAddress ? (
+            <>
+              <View style={styles.addressNameRow}>
+                <Text style={styles.addressName}>
+                  {User?.fullname || User?.fullName || User?.name || 'Customer'}
+                </Text>
+                <View style={styles.addressTypeBadge}>
+                  <Text style={styles.addressTypeBadgeText}>
+                    {deliveryAddressDetails.Label || 'OTHER'}
+                  </Text>
+                </View>
+              </View>
+              <Text style={styles.addressText}>
+                {deliveryAddressText || 'Address details unavailable'}
+              </Text>
+              {(User?.phone || User?.contact || User?.mobile) ? (
+                <Text style={styles.addressPhone}>
+                  {User.phone || User.contact || User.mobile}
+                </Text>
+              ) : null}
+            </>
+          ) : (
+            <View style={styles.addressEmpty}>
+              <Text style={styles.addressEmptyText}>
+                {addressesLoading ? 'Loading saved addresses…' : 'No saved delivery address'}
+              </Text>
+              {!addressesLoading ? (
+                <Pressable
+                  onPress={() => router.push('/address/savedAddresses')}
+                  accessibilityRole="button"
+                >
+                  <Text style={styles.addressEmptyAction}>Add an address</Text>
+                </Pressable>
+              ) : null}
             </View>
-          </View>
-          <Text style={styles.addressText}>
-            Flat 402, Signature Towers, 12th Main Rd, Indiranagar,{'\n'}
-            Bengaluru, Karnataka — 560038
-          </Text>
-          <Text style={styles.addressPhone}>+91 98450 82194</Text>
+          )}
         </View>
 
         {/* ── Delivery Speed ─────────────────────────────────────────────── */}
@@ -460,12 +520,7 @@ export default function CheckoutScreen() {
               <Text style={styles.billValue}>+{formatINR(deliveryCharge)}</Text>
             )}
           </View>
-
-          <View style={styles.billRow}>
-            <Text style={styles.billLabel}>Taxes & GST (Included)</Text>
-            <Text style={styles.billValue}>{formatINR(gstAmount)}</Text>
-          </View>
-
+          
           <View style={styles.billDivider} />
 
           <View style={styles.billTotalRow}>
@@ -485,6 +540,95 @@ export default function CheckoutScreen() {
           </View>
         </View>
       </ScrollView>
+
+      <Modal
+        animationType="fade"
+        transparent
+        visible={isAddressPickerVisible}
+        onRequestClose={() => setIsAddressPickerVisible(false)}
+      >
+        <View style={styles.addressPickerOverlay}>
+          <View style={styles.addressPickerSheet}>
+            <View style={styles.addressPickerHeader}>
+              <Text style={styles.addressPickerTitle}>Choose delivery address</Text>
+              <Pressable
+                style={styles.addressPickerClose}
+                onPress={() => setIsAddressPickerVisible(false)}
+                accessibilityRole="button"
+                accessibilityLabel="Close address picker"
+              >
+                <SnitchIcon name="close" size={18} color={SnitchColors.textPrimary} />
+              </Pressable>
+            </View>
+            {addressList.length > 0 ? (
+              <ScrollView
+                contentContainerStyle={styles.addressPickerList}
+                showsVerticalScrollIndicator={false}
+              >
+                {addressList.map((savedAddress, index) => {
+                  const details = savedAddress?.address || {};
+                  const isSelected = savedAddress?._id === selectedDeliveryAddress?._id;
+                  const formattedAddress = [
+                    details.residence,
+                    details.area,
+                    details.LandMark ? `Near ${details.LandMark}` : null,
+                    [details.city, details.state].filter(Boolean).join(', '),
+                    details.pin,
+                  ]
+                    .filter(Boolean)
+                    .join(', ');
+
+                  return (
+                    <Pressable
+                      key={savedAddress?._id || `${details.pin}-${index}`}
+                      style={[
+                        styles.addressOption,
+                        isSelected && styles.addressOptionSelected,
+                      ]}
+                      onPress={() => {
+                        setDefaultAddressHandler(savedAddress?._id);
+                        setIsAddressPickerVisible(false);
+                      }}
+                      accessibilityRole="button"
+                      accessibilityState={{ selected: isSelected }}
+                    >
+                      <View style={styles.addressOptionHeader}>
+                        <Text style={styles.addressOptionLabel}>
+                          {details.Label || 'Other'}
+                        </Text>
+                        {isSelected ? (
+                          <SnitchIcon name="check_circle" size={18} color={SnitchColors.secondary} />
+                        ) : null}
+                      </View>
+                      <Text style={styles.addressOptionText}>
+                        {formattedAddress || 'Address details unavailable'}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </ScrollView>
+            ) : (
+              <View style={styles.addressPickerEmpty}>
+                <Text style={styles.addressEmptyText}>
+                  {addressesLoading ? 'Loading saved addresses…' : 'No saved addresses yet'}
+                </Text>
+                {!addressesLoading ? (
+                  <Pressable
+                    style={styles.addressPickerAddButton}
+                    onPress={() => {
+                      setIsAddressPickerVisible(false);
+                      router.push('/address/savedAddresses');
+                    }}
+                    accessibilityRole="button"
+                  >
+                    <Text style={styles.addressPickerAddButtonText}>Add an address</Text>
+                  </Pressable>
+                ) : null}
+              </View>
+            )}
+          </View>
+        </View>
+      </Modal>
 
       {/* ── Sticky Pay Bar ─────────────────────────────────────────────── */}
       <View style={[styles.payBar, { paddingBottom: insets.bottom + 8 }]}>
